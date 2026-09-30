@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -37,17 +37,16 @@ describe('PublicShell', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it('leva a navegação do visitante às seções da landing', () => {
+  it('leva a navegação do visitante às seções da landing, sem séries por padrão', () => {
     montar();
 
     expect(screen.getByRole('link', { name: 'Filmes' })).toHaveAttribute(
       'href',
       '/boas-vindas#filmes',
     );
-    expect(screen.getByRole('link', { name: 'Séries' })).toHaveAttribute(
-      'href',
-      '/boas-vindas#series',
-    );
+    expect(
+      screen.queryByRole('link', { name: 'Séries' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Entrar' })).toHaveAttribute(
       'href',
       '/entrar',
@@ -83,5 +82,15 @@ describe('PublicShell', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/busca?q=bacurau',
     );
+  });
+
+  it('mostra séries no menu quando a funcionalidade é ligada', () => {
+    vi.stubEnv('VITE_FEATURE_SERIES', 'true');
+    montar();
+    expect(screen.getByRole('link', { name: 'Séries' })).toHaveAttribute(
+      'href',
+      '/boas-vindas#series',
+    );
+    vi.unstubAllEnvs();
   });
 });

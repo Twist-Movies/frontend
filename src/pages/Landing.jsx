@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Hero from '../components/landing/Hero';
 import MediaCarousel from '../components/landing/MediaCarousel';
 import About from '../components/landing/About';
+import { isEnabled } from '../config/features';
 import { films, series } from '../data/mock';
 
 export default function Landing() {
@@ -26,14 +27,16 @@ export default function Landing() {
         yearOf={(film) => film.year}
       />
 
-      <MediaCarousel
-        id="series"
-        kind="serie"
-        label="PARA MARATONAR"
-        title="Séries populares"
-        items={series}
-        yearOf={(s) => s.startYear}
-      />
+      {isEnabled('series') && (
+        <MediaCarousel
+          id="series"
+          kind="serie"
+          label="PARA MARATONAR"
+          title="Séries populares"
+          items={series}
+          yearOf={(s) => s.startYear}
+        />
+      )}
 
       <About />
     </>

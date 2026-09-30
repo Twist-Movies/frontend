@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithAuth } from './test/utils';
 import { AppRoutes } from './routes';
@@ -10,7 +10,6 @@ function renderAt(route) {
 describe('AppRoutes', () => {
   it.each([
     ['/filmes', 'Filmes'],
-    ['/series', 'Séries'],
     ['/listas', 'Listas'],
     ['/membros', 'Membros'],
     ['/busca', 'Busca'],
@@ -25,7 +24,6 @@ describe('AppRoutes', () => {
 
   it.each([
     ['/filme/3', 'Filme'],
-    ['/serie/2', 'Série'],
     ['/lista/l1', 'Lista'],
     ['/resenha/r1', 'Resenha'],
     ['/u/davi', 'Perfil'],
@@ -59,5 +57,27 @@ describe('AppRoutes', () => {
 
     expect(screen.getByRole('link', { name: 'TWIST' })).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+  });
+
+  describe('séries (em espera)', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('não tem rota de séries por padrão', () => {
+      renderAt('/series');
+      expect(screen.getByText('Esta página não existe')).toBeInTheDocument();
+    });
+
+    it.each([
+      ['/series', 'Séries'],
+      ['/serie/2', 'Série'],
+    ])('com a funcionalidade ligada, resolve %s para %s', (route, heading) => {
+      vi.stubEnv('VITE_FEATURE_SERIES', 'true');
+      renderAt(route);
+      expect(
+        screen.getByRole('heading', { level: 1, name: heading }),
+      ).toBeInTheDocument();
+    });
   });
 });

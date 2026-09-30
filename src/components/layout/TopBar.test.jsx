@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -34,10 +34,6 @@ describe('TopBar', () => {
     expect(screen.getByRole('link', { name: 'Filmes' })).toHaveAttribute(
       'href',
       '/filmes',
-    );
-    expect(screen.getByRole('link', { name: 'Séries' })).toHaveAttribute(
-      'href',
-      '/series',
     );
     expect(screen.getByRole('link', { name: 'Listas' })).toHaveAttribute(
       'href',
@@ -104,5 +100,27 @@ describe('TopBar', () => {
     await userEvent.click(screen.getByRole('button', { name: '+ Registrar' }));
 
     expect(onLogFilm).toHaveBeenCalledOnce();
+  });
+
+  describe('séries (em espera)', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('esconde o link de séries por padrão', () => {
+      renderTopBar();
+      expect(
+        screen.queryByRole('link', { name: 'Séries' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('mostra o link quando a funcionalidade é ligada', () => {
+      vi.stubEnv('VITE_FEATURE_SERIES', 'true');
+      renderTopBar();
+      expect(screen.getByRole('link', { name: 'Séries' })).toHaveAttribute(
+        'href',
+        '/series',
+      );
+    });
   });
 });

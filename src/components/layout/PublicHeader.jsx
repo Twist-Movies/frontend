@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { User } from 'lucide-react';
+import { onlyEnabled } from '../../config/features';
 import { cx } from '../../lib/cx';
 import { Logo } from './Logo';
 import { SearchForm } from './SearchForm';
@@ -8,7 +9,7 @@ import { SearchForm } from './SearchForm';
 const NAV = [
   { hash: '#inicio', label: 'Início' },
   { hash: '#filmes', label: 'Filmes' },
-  { hash: '#series', label: 'Séries' },
+  { hash: '#series', label: 'Séries', feature: 'series' },
   { hash: '#sobre', label: 'Sobre' },
 ];
 
@@ -32,7 +33,7 @@ export function PublicHeader({ overlay = false }) {
       </div>
 
       <nav className="hidden gap-7.5 lg:flex" aria-label="Navegação principal">
-        {NAV.map((item) => (
+        {onlyEnabled(NAV).map((item) => (
           <Link
             key={item.hash}
             to={`/boas-vindas${item.hash}`}

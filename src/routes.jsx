@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { AppShell, PublicShell } from './components/layout';
 import { RedirectIfAuthenticated, RequireAuth } from './auth';
+import { isEnabled } from './config/features';
 import Feed from './pages/Feed';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -46,8 +47,12 @@ export function AppRoutes() {
           <Route path="filmes" element={<Films />} />
           <Route path="filme/:filmId" element={<FilmDetail />} />
 
-          <Route path="series" element={<Series />} />
-          <Route path="serie/:seriesId" element={<SeriesDetail />} />
+          {isEnabled('series') && (
+            <>
+              <Route path="series" element={<Series />} />
+              <Route path="serie/:seriesId" element={<SeriesDetail />} />
+            </>
+          )}
 
           <Route path="listas" element={<Lists />} />
           <Route path="lista/:listId" element={<ListDetail />} />

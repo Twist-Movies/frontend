@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import { renderWithRouter } from '../test/utils';
 import Landing from './Landing';
@@ -38,7 +38,14 @@ describe('Landing', () => {
     ).toHaveAttribute('href', '/filme/2');
   });
 
-  it('mostra a vitrine de séries apontando para a página da série', () => {
+  it('não mostra séries enquanto a funcionalidade está em espera', () => {
+    renderWithRouter(<Landing />);
+
+    expect(screen.queryByLabelText('Séries populares')).not.toBeInTheDocument();
+  });
+
+  it('mostra a vitrine de séries quando a funcionalidade é ligada', () => {
+    vi.stubEnv('VITE_FEATURE_SERIES', 'true');
     renderWithRouter(<Landing />);
 
     const vitrine = screen.getByLabelText('Séries populares');
@@ -46,13 +53,14 @@ describe('Landing', () => {
     expect(
       within(vitrine).getByRole('link', { name: 'Sintonia (2019)' }),
     ).toHaveAttribute('href', '/serie/2');
+    vi.unstubAllEnvs();
   });
 
   it('rola até a seção pedida na âncora do endereço', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
 
-    renderWithRouter(<Landing />, { route: '/boas-vindas#series' });
+    renderWithRouter(<Landing />, { route: '/boas-vindas#sobre' });
 
     expect(scrollIntoView).toHaveBeenCalledOnce();
     delete Element.prototype.scrollIntoView;

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { onlyEnabled } from '../../config/features';
 import { cx } from '../../lib/cx';
 import { Button } from '../ui';
 import { Logo } from './Logo';
@@ -7,7 +8,7 @@ import { UserMenu } from './UserMenu';
 
 const NAV = [
   { to: '/filmes', label: 'Filmes' },
-  { to: '/series', label: 'Séries' },
+  { to: '/series', label: 'Séries', feature: 'series' },
   { to: '/listas', label: 'Listas' },
   { to: '/membros', label: 'Membros' },
 ];
@@ -19,7 +20,7 @@ export function TopBar({ username, onLogFilm, onSignOut }) {
         <Logo to="/" />
 
         <nav className="hidden gap-6 md:flex" aria-label="Navegação principal">
-          {NAV.map((item) => (
+          {onlyEnabled(NAV).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
