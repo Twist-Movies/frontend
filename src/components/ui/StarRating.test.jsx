@@ -41,37 +41,36 @@ describe('StarRating (somente leitura)', () => {
 });
 
 describe('StarRating (editável)', () => {
-  it('expõe um radiogroup com dez opções — meias e cheias', () => {
+  it('expõe um radiogroup com cinco notas inteiras (RF07.01)', () => {
     render(<StarRating value={0} onChange={vi.fn()} />);
 
     expect(screen.getByRole('radiogroup')).toBeInTheDocument();
-    expect(screen.getAllByRole('radio')).toHaveLength(10);
+    expect(
+      screen.getAllByRole('radio').map((r) => r.getAttribute('aria-label')),
+    ).toEqual([
+      '1 estrela',
+      '2 estrelas',
+      '3 estrelas',
+      '4 estrelas',
+      '5 estrelas',
+    ]);
   });
 
-  it('emite meia estrela ao clicar na zona esquerda', async () => {
+  it('emite a nota inteira clicada', async () => {
     const onChange = vi.fn();
     render(<StarRating value={0} onChange={onChange} />);
 
-    await userEvent.click(screen.getByRole('radio', { name: '3.5 estrelas' }));
+    await userEvent.click(screen.getByRole('radio', { name: '3 estrelas' }));
 
-    expect(onChange).toHaveBeenCalledWith(3.5);
+    expect(onChange).toHaveBeenCalledWith(3);
   });
 
-  it('emite estrela cheia ao clicar na zona direita', async () => {
-    const onChange = vi.fn();
-    render(<StarRating value={0} onChange={onChange} />);
-
-    await userEvent.click(screen.getByRole('radio', { name: '5 estrelas' }));
-
-    expect(onChange).toHaveBeenCalledWith(5);
-  });
-
-  it('marca como selecionada apenas a opção correspondente à nota', () => {
-    render(<StarRating value={4} onChange={vi.fn()} />);
+  it('marca só a nota atual e acende as estrelas até ela', () => {
+    const { container } = render(<StarRating value={4} onChange={vi.fn()} />);
 
     expect(screen.getByRole('radio', { name: '4 estrelas' })).toBeChecked();
-    expect(
-      screen.getByRole('radio', { name: '4.5 estrelas' }),
-    ).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: '5 estrelas' })).not.toBeChecked();
+    expect(container.querySelectorAll('[data-fill="full"]')).toHaveLength(4);
+    expect(container.querySelectorAll('[data-fill="half"]')).toHaveLength(0);
   });
 });

@@ -205,7 +205,7 @@ export const activity = [
     username: 'carlos',
     createdAt: '2026-08-23',
     filmId: '1',
-    rating: 4.5,
+    rating: 3,
   },
 ];
 

@@ -11,7 +11,11 @@ const SIZES = {
 function StarGlyph({ fill }) {
   if (fill === 'half') {
     return (
-      <span data-fill="half" className="relative inline-block" aria-hidden="true">
+      <span
+        data-fill="half"
+        className="relative inline-block"
+        aria-hidden="true"
+      >
         <span className="text-faint">{STAR}</span>
         <span className="absolute inset-y-0 left-0 w-1/2 overflow-hidden text-star">
           {STAR}
@@ -41,9 +45,11 @@ function fillFor(starIndex, value) {
 }
 
 /**
- * Exibe (e opcionalmente edita) uma nota de 0 a 5 com meias-estrelas.
- * Sem onChange é somente leitura. Com onChange vira um radiogroup navegável
- * por teclado — cada estrela tem duas zonas de clique (meia e cheia).
+ * Exibe ou edita uma nota de estrelas.
+ *
+ * Somente leitura (sem onChange) aceita fração, porque a MÉDIA de um filme
+ * pode ser 4,3 — por isso ainda desenha meia estrela. Editável segue a spec
+ * (RF07.01): a nota de cada pessoa é inteira, de 1 a 5.
  */
 export function StarRating({ value, onChange, size = 'md', label }) {
   const interactive = typeof onChange === 'function';
@@ -60,34 +66,20 @@ export function StarRating({ value, onChange, size = 'md', label }) {
     );
   }
 
-  const zona =
-    'absolute top-0 z-1 m-0 h-full w-1/2 cursor-pointer border-0 bg-transparent p-0';
-
   return (
     <span className={base} role="radiogroup" aria-label={label ?? 'Nota'}>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <span
-          key={i}
-          className="group relative inline-block cursor-pointer [&>[data-fill]]:group-hover:text-accent"
+      {[1, 2, 3, 4, 5].map((nota) => (
+        <button
+          key={nota}
+          type="button"
+          role="radio"
+          aria-checked={value === nota}
+          aria-label={nota === 1 ? '1 estrela' : `${nota} estrelas`}
+          onClick={() => onChange(nota)}
+          className="cursor-pointer border-0 bg-transparent p-0 hover:[&>[data-fill]]:text-accent"
         >
-          <button
-            type="button"
-            className={`${zona} left-0`}
-            role="radio"
-            aria-checked={value === i + 0.5}
-            aria-label={`${i + 0.5} estrelas`}
-            onClick={() => onChange(i + 0.5)}
-          />
-          <button
-            type="button"
-            className={`${zona} right-0`}
-            role="radio"
-            aria-checked={value === i + 1}
-            aria-label={`${i + 1} estrelas`}
-            onClick={() => onChange(i + 1)}
-          />
-          <StarGlyph fill={fillFor(i, value)} />
-        </span>
+          <StarGlyph fill={value >= nota ? 'full' : 'empty'} />
+        </button>
       ))}
     </span>
   );
