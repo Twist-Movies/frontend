@@ -1,0 +1,53 @@
+# Pipeline do FRONT-END do TWIST.
+#
+# O back-end vive em repositório próprio e tem o seu próprio pipeline: a
+# cobertura publicada aqui é a do front-end, não a da aplicação inteira.
+# Ver a seção "Indicadores" do README sobre o "e/ou" da ficha 5.
+name: CI · Front-end
+
+# Gatilho da ficha do indicador 5: "a cada push/merge para a branch principal,
+# o pipeline de CI executa a suíte de testes automatizados".
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  qualidade:
+    name: Lint, tipos, testes e cobertura
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Testes com cobertura
+        # Os thresholds do vite.config.js (>= 80%) fazem este passo falhar
+        # sozinho quando a cobertura cai abaixo da meta do indicador 5.
+        run: npm run coverage
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend
+          path: coverage/
+          retention-days: 30
+
+      - name: Resumo da cobertura
+        if: always()
+        run: node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
