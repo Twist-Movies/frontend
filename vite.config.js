@@ -1,11 +1,23 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
+  server: {
+    // O back-end ainda não libera CORS; em desenvolvimento o Vite repassa
+    // /api para o Django e o navegador enxerga tudo como mesma origem.
+    proxy: {
+      '/api': {
+        target:
+          loadEnv(mode, process.cwd(), '').VITE_API_PROXY_TARGET ||
+          'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     // O pool padrão (forks) trava aguardando os workers responderem no Windows;
@@ -37,4 +49,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
