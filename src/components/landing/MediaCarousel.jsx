@@ -1,79 +1,40 @@
-import MovieCard from './MovieCard';
+import { PosterCard } from '../ui';
 
-function MovieCarousel() {
-
-  const movies = [
-    {
-      id: 1,
-      title: 'Filme Exemplo 1',
-      year: 2026,
-      rating: 4.5,
-      image: '/images/filme-1.jpg'
-    },
-    {
-      id: 2,
-      title: 'Filme Exemplo 2',
-      year: 2025,
-      rating: 4.2,
-      image: '/images/filme-2.jpg'
-    },
-    {
-      id: 3,
-      title: 'Filme Exemplo 3',
-      year: 2025,
-      rating: 4.8,
-      image: '/images/filme-3.jpg'
-    },
-    {
-      id: 4,
-      title: 'Filme Exemplo 4',
-      year: 2024,
-      rating: 3.9,
-      image: '/images/filme-4.jpg'
-    },
-    {
-      id: 5,
-      title: 'Filme Exemplo 5',
-      year: 2024,
-      rating: 4.6,
-      image: '/images/filme-5.jpg'
-    }
-  ];
-
+/**
+ * Faixa horizontal de pôsteres da landing. Serve para filmes e séries:
+ * `kind` define a rota do pôster e `yearOf` de onde sai o ano.
+ */
+function MediaCarousel({ id, label, title, items, kind = 'filme', yearOf }) {
   return (
-    <section id="filmes" className="movies-section">
-
-      <div className="section-header">
-
+    <section id={id} className="bg-bg px-5 py-18 sm:px-[5%] sm:py-25">
+      <div className="mb-10 flex items-end justify-between">
         <div>
-          <p className="section-label">
-            EM DESTAQUE
+          <p className="mb-2.5 text-xs font-bold tracking-[3px] opacity-60">
+            {label}
           </p>
-
-          <h2>
-            Filmes populares
-          </h2>
+          <h2 className="text-3xl font-bold sm:text-[40px]">{title}</h2>
         </div>
-
-        <a href="#filmes">
-          Ver todos
-        </a>
-
       </div>
 
-      <div className="movie-carousel">
-
-        {movies.map((movie) => (
-          <MovieCard
-            key={movie.id}
-            movie={movie}
-          />
+      <div
+        aria-label={title}
+        className="flex snap-x gap-5 overflow-x-auto scroll-smooth pb-4 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#555]"
+      >
+        {items.map((item) => (
+          <div key={item.id} className="flex-[0_0_170px] snap-start sm:flex-[0_0_220px]">
+            <PosterCard
+              id={item.id}
+              kind={kind}
+              title={item.title}
+              year={yearOf(item)}
+              posterUrl={item.posterUrl}
+              rating={item.averageRating}
+            />
+          </div>
         ))}
-
       </div>
-
     </section>
   );
 }
 
-export default MovieCarousel;
+export default MediaCarousel;
