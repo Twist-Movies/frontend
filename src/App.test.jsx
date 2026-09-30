@@ -19,6 +19,10 @@ describe('App', () => {
 
   it('entrega o feed a quem já tem sessão salva', () => {
     localStorage.setItem(
+      'twist:tokens',
+      JSON.stringify({ access: 'a', refresh: 'r' }),
+    );
+    localStorage.setItem(
       'twist:session',
       JSON.stringify({
         username: 'davi',

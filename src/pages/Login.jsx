@@ -4,18 +4,10 @@ import { Button, Field, Input } from '../components/ui';
 import { FormAviso } from '../auth/FormAviso';
 import { useAuth } from '../auth';
 import { AuthLayout, FORM } from '../auth/AuthLayout';
-
-function validar(email, password) {
-  const erros = {};
-  if (!email.trim()) erros.email = 'Informe seu e-mail.';
-  else if (!/^\S+@\S+\.\S+$/.test(email.trim()))
-    erros.email = 'E-mail inválido.';
-  if (!password) erros.password = 'Informe sua senha.';
-  return erros;
-}
+import { validarLogin } from '../auth/validacao';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [erros, setErros] = useState({});
   const [falha, setFalha] = useState(null);
@@ -32,13 +24,13 @@ export default function Login() {
     e.preventDefault();
     setFalha(null);
 
-    const encontrados = validar(email, password);
+    const encontrados = validarLogin({ identifier, password });
     setErros(encontrados);
     if (Object.keys(encontrados).length > 0) return;
 
     setEnviando(true);
     try {
-      await signIn({ email, password });
+      await signIn({ identifier, password });
       navigate(destino, { replace: true });
     } catch (erro) {
       setFalha(erro);
@@ -60,17 +52,16 @@ export default function Login() {
       <form className={FORM} onSubmit={enviar} noValidate>
         <FormAviso erro={falha} />
 
-        <Field label="E-mail" error={erros.email}>
+        <Field label="E-mail ou nome de usuário" error={erros.identifier}>
           {(id) => (
             <Input
               id={id}
-              type="email"
-              autoComplete="email"
-              value={email}
-              invalid={Boolean(erros.email)}
+              autoComplete="username"
+              value={identifier}
+              invalid={Boolean(erros.identifier)}
               onChange={(e) => {
-                setEmail(e.target.value);
-                setErros((a) => ({ ...a, email: undefined }));
+                setIdentifier(e.target.value);
+                setErros((a) => ({ ...a, identifier: undefined }));
               }}
             />
           )}
@@ -102,10 +93,12 @@ export default function Login() {
           {enviando ? 'Entrando…' : 'Entrar'}
         </Button>
 
-        <p className="rounded-lg border border-dashed border-line bg-surface-2 p-3 text-center text-xs text-muted [&_code]:text-fg">
-          Sem back-end ainda. Use <code>davi@twist.app</code> com a senha{' '}
-          <code>twist1234</code>.
-        </p>
+        {import.meta.env.VITE_API_MOCK !== 'false' && (
+          <p className="rounded-lg border border-dashed border-line bg-surface-2 p-3 text-center text-xs text-muted [&_code]:text-fg">
+            Modo de demonstração. Use <code>davi@twist.app</code> (ou{' '}
+            <code>davi</code>) com a senha <code>twist1234</code>.
+          </p>
+        )}
       </form>
     </AuthLayout>
   );

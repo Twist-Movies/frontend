@@ -2,8 +2,9 @@
  Repositório Frontend do Projeto Twist.
 
 React 19 + Vite + Tailwind CSS 4 + React Router 7, em JavaScript (JSX).
-Ainda sem back-end: os dados vêm de `src/data/mock.js` e a autenticação é
-simulada em `src/auth/session.js` — quando a API existir, só esses arquivos mudam.
+O que construir segue a especificação em
+[Twist-Movies/docs](https://github.com/Twist-Movies/docs); a API é o
+[Twist-Movies/backend](https://github.com/Twist-Movies/backend) (Django).
 
 ## Para Rodar o Projeto
 
@@ -17,7 +18,21 @@ npm run dev
 Abra `http://localhost:5173`. O Tailwind já vem configurado pelo plugin do Vite
 (`@tailwindcss/vite`), não precisa rodar nenhum comando de inicialização.
 
-Conta de demonstração: `davi@twist.app` / `twist1234`.
+### Modo demonstração x API real
+
+Por padrão o front roda **sem o back-end**: login e cadastro são simulados no
+navegador. Conta de demonstração: `davi@twist.app` (ou `davi`) / `twist1234`.
+
+Para falar com a API do Django, suba o back-end em `localhost:8000` e crie um
+`.env.local` (veja `.env.example`):
+
+```bash
+VITE_API_MOCK=false
+```
+
+Em desenvolvimento o Vite repassa `/api` para o Django (o back ainda não libera
+CORS). Hoje a API real cobre login, cadastro, logout e renovação de token; o
+resto das telas usa `src/data/mock.js` até os endpoints existirem.
 
 ## Scripts
 
@@ -33,7 +48,9 @@ Conta de demonstração: `davi@twist.app` / `twist1234`.
 
 ```
 src/
-  auth/            sessão simulada, contexto, guards de rota, telas de identidade
+  api/             cliente HTTP (JWT, renovação de token, erros do DRF) e auth real/simulada
+  auth/            contexto da sessão, guards de rota, validação dos formulários
+  config/          feature flags (séries em espera)
   components/
     landing/       Hero, carrossel de filmes e séries, Sobre
     layout/        topo do visitante, topo logado, menu da conta, rodapé

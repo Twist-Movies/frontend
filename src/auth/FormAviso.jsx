@@ -1,5 +1,5 @@
 import { cx } from '../lib/cx';
-import { AuthError } from './session';
+import { ApiError } from '../api/errors';
 
 /**
  * Mostra a falha de um formulário de identidade.
@@ -11,10 +11,10 @@ import { AuthError } from './session';
 export function FormAviso({ erro }) {
   if (!erro) return null;
 
-  const deServidor = !(erro instanceof AuthError) || !erro.isClientError;
+  const deServidor = !(erro instanceof ApiError) || !erro.isClientError;
 
   const mensagem =
-    erro instanceof AuthError
+    erro instanceof ApiError
       ? erro.message
       : 'Não foi possível completar a operação. Tente novamente em instantes.';
 
