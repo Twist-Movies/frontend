@@ -2,43 +2,104 @@
 #
 # O back-end vive em repositório próprio e tem o seu próprio pipeline: a
 # cobertura publicada aqui é a do front-end, não a da aplicação inteira.
-# Ver a seção "Indicadores" do README sobre o "e/ou" da ficha 5.
 name: CI · Front-end
 
 # Gatilho da ficha do indicador 5: "a cada push/merge para a branch principal,
-# o pipeline de CI executa a suíte de testes automatizados".
+# o pipeline de CI executa a suíte de testes automatizados". A dev é a branch
+# de integração, então recebe o mesmo tratamento.
 on:
   push:
     branches: [main, dev]
   pull_request:
     branches: [main, dev]
+  workflow_dispatch:
 
+# Um push novo na mesma branch cancela a execução anterior, que já ficou velha.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Os três jobs rodam em paralelo: uma falha diz exatamente o que quebrou.
 jobs:
-  qualidade:
-    name: Lint, tipos, testes e cobertura
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - run: npm ci
+      - run: npm run lint
 
-      - name: Instalar dependências
-        run: npm ci
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
+  testes:
+    name: Testes e cobertura
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # para comentar a cobertura no pull request
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
 
       - name: Testes com cobertura
         # Os thresholds do vite.config.js (>= 80%) fazem este passo falhar
         # sozinho quando a cobertura cai abaixo da meta do indicador 5.
         run: npm run coverage
+
+      - name: Resumo da cobertura
+        if: always()
+        run: node scripts/coverage-summary.mjs | tee resumo-cobertura.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comentar a cobertura no pull request
+        # PR vindo de fork recebe token só de leitura; nesse caso só o
+        # sumário da execução mostra a cobertura.
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const corpo = fs.readFileSync('resumo-cobertura.md', 'utf8');
+            const marcador = '<!-- twist-cobertura -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comentarios = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number },
+            );
+            const anterior = comentarios.find((c) => c.body?.includes(marcador));
+
+            if (anterior) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: anterior.id, body: corpo,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number, body: corpo,
+              });
+            }
 
       - name: Publicar relatório de cobertura
         if: always()
@@ -47,7 +108,3 @@ jobs:
           name: coverage-frontend
           path: coverage/
           retention-days: 30
-
-      - name: Resumo da cobertura
-        if: always()
-        run: node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
