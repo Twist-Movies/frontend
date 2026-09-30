@@ -1,10 +1,21 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
+  server: {
+    // O back ainda não libera CORS: em dev o Vite repassa /api para o Django.
+    proxy: {
+      '/api': {
+        target:
+          loadEnv(mode, process.cwd(), '').VITE_API_PROXY_TARGET ||
+          'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     // O pool padrão (forks) trava no Windows.
@@ -32,4 +43,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
