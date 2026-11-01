@@ -1,54 +1,80 @@
-import { describe, expect, it } from 'vitest';
-import { screen, within } from '@testing-library/react';
-import { renderWithRouter } from '../test/utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import { renderWithAuth } from '../test/utils';
+import { ApiError } from '../api/errors';
+import { listarPlaylists } from '../api/playlists';
 import Feed from './Feed';
-import { activity, films } from '../data/mock';
+
+vi.mock('../api/playlists', () => ({ listarPlaylists: vi.fn() }));
+
+function Local() {
+  const { pathname, search } = useLocation();
+  return <p data-testid="local">{pathname + search}</p>;
+}
+
+function renderizar() {
+  renderWithAuth(
+    <Routes>
+      <Route path="/" element={<Feed />} />
+      <Route path="*" element={<Local />} />
+    </Routes>,
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  listarPlaylists.mockResolvedValue({
+    results: [{ id: 7, name: 'Favoritos', is_public: true }],
+  });
+});
 
 describe('Feed', () => {
-  it('mostra a vitrine de populares com um pôster por filme', () => {
-    renderWithRouter(<Feed />);
+  it('cumprimenta o usuário logado', () => {
+    renderizar();
 
-    const vitrine = screen.getByLabelText('Populares esta semana');
-    expect(within(vitrine).getAllByRole('link')).toHaveLength(films.length);
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Olá, Davi Almeida' }),
+    ).toBeInTheDocument();
   });
 
-  it('liga a vitrine ao catálogo completo', () => {
-    renderWithRouter(<Feed />);
+  it('mostra as listas reais do usuário', async () => {
+    renderizar();
 
-    expect(screen.getByRole('link', { name: 'ver tudo' })).toHaveAttribute(
-      'href',
-      '/filmes',
-    );
+    const link = await screen.findByRole('link', { name: /Favoritos/ });
+    expect(link).toHaveAttribute('href', '/lista/7');
   });
 
-  it('lista uma entrada por atividade de quem o usuário segue', () => {
-    renderWithRouter(<Feed />);
+  it('convida a criar a primeira lista quando não há nenhuma', async () => {
+    listarPlaylists.mockResolvedValue({ results: [] });
+    renderizar();
 
-    activity.forEach((item) => {
-      expect(
-        screen.getAllByRole('link', { name: item.username }).length,
-      ).toBeGreaterThan(0);
-    });
+    expect(
+      await screen.findByRole('link', { name: 'Criar minha primeira lista' }),
+    ).toHaveAttribute('href', '/listas');
   });
 
-  it('traduz cada tipo de atividade para uma frase em português', () => {
-    renderWithRouter(<Feed />);
+  it('mostra o erro da API', async () => {
+    listarPlaylists.mockRejectedValue(new ApiError(500, 'Falha no servidor.'));
+    renderizar();
 
-    expect(screen.getByText('resenhou')).toBeInTheDocument();
-    expect(screen.getAllByText('assistiu').length).toBeGreaterThan(0);
-    expect(screen.getByText('curtiu')).toBeInTheDocument();
-    expect(screen.getByText('criou uma lista')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Falha no servidor.');
   });
 
-  it('mostra a nota apenas nas atividades que têm nota', () => {
-    renderWithRouter(<Feed />);
+  it('leva a busca rápida para a tela de busca', async () => {
+    renderizar();
 
-    const comNota = activity.filter((a) => a.rating !== undefined);
-    comNota.forEach((a) => {
-      expect(
-        screen.getAllByRole('img', { name: `${a.rating} de 5 estrelas` })
-          .length,
-      ).toBeGreaterThan(0);
-    });
+    await userEvent.type(screen.getByLabelText('Buscar filme'), 'matrix');
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(await screen.findByTestId('local')).toHaveTextContent('/busca?q=matrix');
+  });
+
+  it('não exibe filmes ou atividade de exemplo', () => {
+    renderizar();
+
+    expect(screen.getByText('Em breve')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Populares esta semana')).toBeNull();
   });
 });

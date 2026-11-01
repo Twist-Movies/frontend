@@ -13,7 +13,7 @@ const NAV = [
   { to: '/membros', label: 'Membros' },
 ];
 
-export function TopBar({ username, onLogFilm, onSignOut }) {
+export function TopBar({ username, avatarUrl, onLogFilm, onSignOut }) {
   return (
     <header className="sticky top-0 z-50 h-16 border-b border-line bg-bg/90 backdrop-blur-md">
       <div className="flex h-full items-center gap-6 px-6 lg:px-[5%]">
@@ -46,7 +46,11 @@ export function TopBar({ username, onLogFilm, onSignOut }) {
           <Button variant="primary" size="sm" onClick={onLogFilm}>
             + Registrar
           </Button>
-          <UserMenu username={username} onSignOut={onSignOut} />
+          <UserMenu
+            username={username}
+            avatarUrl={avatarUrl}
+            onSignOut={onSignOut}
+          />
         </div>
       </div>
     </header>

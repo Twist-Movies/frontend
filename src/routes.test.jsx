@@ -10,7 +10,7 @@ function renderAt(route) {
 describe('AppRoutes', () => {
   it.each([
     ['/filmes', 'Filmes'],
-    ['/listas', 'Listas'],
+    ['/listas', 'Minhas listas'],
     ['/membros', 'Membros'],
     ['/busca', 'Busca'],
     ['/configuracoes', 'Configurações'],
@@ -23,10 +23,6 @@ describe('AppRoutes', () => {
   });
 
   it.each([
-    ['/filme/3', 'Filme'],
-    ['/lista/l1', 'Lista'],
-    ['/resenha/r1', 'Resenha'],
-    ['/u/davi', 'Perfil'],
     ['/u/davi/filmes', 'Filmes assistidos'],
     ['/u/davi/diario', 'Diário'],
     ['/u/davi/watchlist', 'Watchlist'],
@@ -38,11 +34,23 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument();
   });
 
+  it.each(['/filme/3', '/lista/1', '/resenha/1', '/u/davi'])(
+    'resolve a rota dinâmica %s para uma tela que consulta a API',
+    async (route) => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('off')));
+      renderAt(route);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(screen.queryByText('Esta página não existe')).toBeNull();
+      vi.unstubAllGlobals();
+    },
+  );
+
   it('mostra o feed na raiz', () => {
     renderAt('/');
 
     expect(
-      screen.getByText('Atividade de quem você segue'),
+      screen.getByRole('heading', { level: 1, name: 'Olá, Davi Almeida' }),
     ).toBeInTheDocument();
   });
 

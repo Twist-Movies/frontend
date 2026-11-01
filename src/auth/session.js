@@ -8,6 +8,7 @@ export function loadStoredSession() {
     const dados = JSON.parse(localStorage.getItem(CHAVE) ?? 'null');
     if (!dados?.username) return null;
     return {
+      id: dados.id,
       username: dados.username,
       displayName: dados.displayName ?? dados.username,
       email: dados.email,

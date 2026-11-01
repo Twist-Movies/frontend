@@ -1,115 +1,116 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Avatar,
+  Badge,
+  Button,
   Card,
-  PosterCard,
-  PosterGrid,
+  EmptyState,
+  ErrorState,
+  Input,
   SectionTitle,
-  StarRating,
+  Skeleton,
 } from '../components/ui';
-import { activity, films, filmById } from '../data/mock';
+import { useAuth } from '../auth';
+import { listarPlaylists } from '../api/playlists';
+import { useAsync } from '../lib/useAsync';
 
-function describe(item) {
-  switch (item.kind) {
-    case 'watched':
-      return 'assistiu';
-    case 'reviewed':
-      return 'resenhou';
-    case 'liked':
-      return 'curtiu';
-    case 'listed':
-      return 'criou uma lista';
-    case 'followed':
-      return 'começou a seguir';
+function BuscaRapida() {
+  const [termo, setTermo] = useState('');
+  const navigate = useNavigate();
+
+  function buscar(e) {
+    e.preventDefault();
+    const q = termo.trim();
+    if (q) navigate(`/busca?q=${encodeURIComponent(q)}`);
   }
-}
-
-function ActivityRow({ item }) {
-  const film = item.filmId ? filmById(item.filmId) : undefined;
 
   return (
-    <Card>
-      <div className="flex items-start gap-3">
-        <Avatar name={item.username} size="md" />
-        <div className="flex flex-1 flex-col gap-1">
-          <div>
-            <Link
-              to={`/u/${item.username}`}
-              className="font-bold hover:text-accent"
-            >
-              {item.username}
-            </Link>{' '}
-            <span className="text-muted">{describe(item)}</span>{' '}
-            {film && (
-              <Link
-                to={`/filme/${film.id}`}
-                className="font-bold hover:text-accent"
-              >
-                {film.title}
-              </Link>
-            )}
-          </div>
-          {item.rating !== undefined && (
-            <StarRating value={item.rating} size="sm" />
-          )}
-          <span className="text-sm text-faint">{item.createdAt}</span>
-        </div>
-      </div>
-    </Card>
+    <form role="search" className="flex max-w-xl gap-2" onSubmit={buscar}>
+      <Input
+        type="search"
+        aria-label="Buscar filme"
+        placeholder="O que você quer assistir?"
+        value={termo}
+        onChange={(e) => setTermo(e.target.value)}
+      />
+      <Button type="submit" variant="primary">
+        Buscar
+      </Button>
+    </form>
+  );
+}
+
+function SuasListas() {
+  const { data, error, loading, recarregar } = useAsync(
+    () => listarPlaylists(1),
+    [],
+  );
+
+  if (error) return <ErrorState error={error} onRetry={recarregar} />;
+  if (!data) return loading ? <Skeleton height={80} /> : null;
+
+  if (data.results.length === 0) {
+    return (
+      <EmptyState
+        title="Você ainda não criou nenhuma lista"
+        action={
+          <Link to="/listas" className="text-accent">
+            Criar minha primeira lista
+          </Link>
+        }
+      />
+    );
+  }
+
+  return (
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {data.results.slice(0, 4).map((lista) => (
+        <li key={lista.id}>
+          <Link to={`/lista/${lista.id}`} className="block">
+            <Card className="flex h-full flex-col gap-2 hover:border-accent">
+              <span className="font-bold">{lista.name}</span>
+              <div>
+                <Badge>{lista.is_public ? 'Pública' : 'Privada'}</Badge>
+              </div>
+            </Card>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
 export default function Feed() {
+  const { session } = useAuth();
+
   return (
     <div className="flex flex-col gap-8">
-      <section>
+      <section className="flex flex-col gap-4">
+        <h1 className="text-3xl font-black">
+          Olá, {session?.displayName ?? session?.username}
+        </h1>
+        <BuscaRapida />
+      </section>
+
+      <section aria-label="Suas listas">
         <SectionTitle
           action={
-            <Link to="/filmes" className="text-faint normal-case hover:text-fg">
-              ver tudo
+            <Link to="/listas" className="text-faint normal-case hover:text-fg">
+              ver todas
             </Link>
           }
         >
-          Populares esta semana
+          Suas listas
         </SectionTitle>
-        <PosterGrid aria-label="Populares esta semana">
-          {films.map((film) => (
-            <PosterCard
-              key={film.id}
-              id={film.id}
-              title={film.title}
-              year={film.year}
-              rating={film.averageRating}
-            />
-          ))}
-        </PosterGrid>
+        <SuasListas />
       </section>
 
-      <section className="grid items-start gap-8 lg:grid-cols-[1fr_260px]">
-        <div>
-          <SectionTitle>Atividade de quem você segue</SectionTitle>
-          <div className="flex flex-col gap-4">
-            {activity.map((item) => (
-              <ActivityRow key={item.id} item={item} />
-            ))}
-          </div>
-        </div>
-
-        <aside className="flex flex-col gap-4">
-          <div>
-            <SectionTitle>Sua watchlist</SectionTitle>
-            <div className="grid grid-cols-4 gap-3 lg:grid-cols-2">
-              {films.slice(0, 4).map((film) => (
-                <PosterCard
-                  key={film.id}
-                  id={film.id}
-                  title={film.title}
-                  compact
-                />
-              ))}
-            </div>
-          </div>
-        </aside>
+      <section aria-label="Atividade">
+        <SectionTitle>Atividade e populares</SectionTitle>
+        <EmptyState
+          title="Em breve"
+          description="A atividade de quem você segue e os filmes populares chegam quando o back-end oferecer esses dados."
+        />
       </section>
     </div>
   );
