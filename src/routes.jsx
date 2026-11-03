@@ -11,9 +11,9 @@ import FilmDetail from './pages/FilmDetail';
 import Series from './pages/Series';
 import SeriesDetail from './pages/SeriesDetail';
 import Profile from './pages/Profile';
-import Diary from './pages/Diary';
+// import Diary from './pages/Diary';
 import Watched from './pages/Watched';
-import Watchlist from './pages/Watchlist';
+// import Watchlist from './pages/Watchlist';
 import Lists from './pages/Lists';
 import ListDetail from './pages/ListDetail';
 import ReviewDetail from './pages/ReviewDetail';
@@ -54,8 +54,8 @@ export function AppRoutes() {
           <Route path="membros" element={<Members />} />
           <Route path="u/:username" element={<Profile />} />
           <Route path="u/:username/filmes" element={<Watched />} />
-          <Route path="u/:username/diario" element={<Diary />} />
-          <Route path="u/:username/watchlist" element={<Watchlist />} />
+          {/* <Route path="u/:username/diario" element={<Diary />} /> */}
+          {/* <Route path="u/:username/watchlist" element={<Watchlist />} /> */}
 
           <Route path="busca" element={<Search />} />
           <Route path="configuracoes" element={<Settings />} />

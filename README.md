@@ -18,21 +18,32 @@ npm run dev
 Abra `http://localhost:5173`. O Tailwind já vem configurado pelo plugin do Vite
 (`@tailwindcss/vite`), não precisa rodar nenhum comando de inicialização.
 
-### Modo demonstração x API real
+### Conexão com a API
 
-Por padrão o front roda **sem o back-end**: login e cadastro são simulados no
-navegador. Conta de demonstração: `davi@twist.app` (ou `davi`) / `twist1234`.
+Copie `.env.example` para `.env.local`. Por padrão o front fala com a API real
+(só liga o modo simulado quem define `VITE_API_MOCK=true`) e, em desenvolvimento, o Vite repassa `/api` para o
+endereço de `VITE_API_PROXY_TARGET` (a API publicada no Render ou o Django em
+`localhost:8000`). Como o navegador só enxerga o servidor do Vite, não há
+problema de CORS em dev.
 
-Para falar com a API do Django, suba o back-end em `localhost:8000` e crie um
-`.env.local` (veja `.env.example`):
+O que já está ligado à API: login, cadastro, logout e renovação de token;
+busca e detalhe de filmes (assistido, quero assistir, nota, curtir/não curtir);
+resenhas (listar, criar, editar, excluir, curtir); listas/playlists (criar,
+editar, excluir, adicionar e remover filmes); registro rápido de filme (botão
+**+ Registrar**); o próprio perfil, seguidores/seguindo e as configurações da
+conta (editar perfil e excluir conta).
 
-```bash
-VITE_API_MOCK=false
-```
+Ainda sem endpoint no back, e portanto fora da API: atividade e populares no
+Feed, Filmes (catálogo), Membros, perfil de outros usuários, Assistidos,
+Diário e Watchlist de um usuário.
 
-Em desenvolvimento o Vite repassa `/api` para o Django (o back ainda não libera
-CORS). Hoje a API real cobre login, cadastro, logout e renovação de token; o
-resto das telas usa `src/data/mock.js` até os endpoints existirem.
+Para só testar a interface sem back-end, use `VITE_API_MOCK=true`: apenas o
+login/cadastro são simulados (conta `davi@twist.app` / `twist1234`); as demais
+telas continuam consultando a API real.
+
+**Produção:** a hospedagem do front precisa repassar `/api` para o back (rewrite
+na Vercel/Netlify) ou o back precisa liberar CORS para o domínio do front e o
+build usar `VITE_API_URL=https://twist-api.onrender.com/api`.
 
 ## Scripts
 

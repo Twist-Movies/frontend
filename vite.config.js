@@ -6,7 +6,8 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   server: {
-    // O back ainda não libera CORS: em dev o Vite repassa /api para o Django.
+    // O back ainda não libera CORS: em dev o Vite repassa /api para o Django
+    // (local ou o publicado no Render, conforme VITE_API_PROXY_TARGET).
     proxy: {
       '/api': {
         target:
@@ -23,6 +24,9 @@ export default defineConfig(({ mode }) => ({
     // Formulários longos digitados campo a campo passam de 5s com a suíte inteira rodando.
     testTimeout: 15000,
     globals: true,
+    // Os testes de tela rodam com a autenticação simulada, salvo quando o
+    // próprio teste pede a API real com vi.stubEnv.
+    env: { VITE_API_MOCK: 'true' },
     setupFiles: ['./src/test/setup.js'],
     coverage: {
       provider: 'istanbul',

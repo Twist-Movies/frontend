@@ -92,7 +92,7 @@ export default function Login() {
           {enviando ? 'Entrando…' : 'Entrar'}
         </Button>
 
-        {import.meta.env.VITE_API_MOCK !== 'false' && (
+        {import.meta.env.VITE_API_MOCK === 'true' && (
           <p className="rounded-lg border border-dashed border-line bg-surface-2 p-3 text-center text-xs text-muted [&_code]:text-fg">
             Modo de demonstração. Use <code>davi@twist.app</code> (ou{' '}
             <code>davi</code>) com a senha <code>twist1234</code>.

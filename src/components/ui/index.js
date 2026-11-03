@@ -11,3 +11,5 @@ export { Skeleton, PosterGridSkeleton } from './Skeleton';
 export { Modal } from './Modal';
 export { Tabs } from './Tabs';
 export { SectionTitle } from './SectionTitle';
+export { ErrorState } from './ErrorState';
+export { Paginacao } from './Paginacao';

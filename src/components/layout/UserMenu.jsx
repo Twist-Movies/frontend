@@ -6,7 +6,7 @@ import { useTheme } from '../../lib/useTheme';
 const ITEM =
   'block w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2';
 
-export function UserMenu({ username, onSignOut }) {
+export function UserMenu({ username, avatarUrl, onSignOut }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const { theme, toggle } = useTheme();
@@ -36,7 +36,7 @@ export function UserMenu({ username, onSignOut }) {
         aria-expanded={open}
         aria-label="Menu da conta"
       >
-        <Avatar name={username} size="md" />
+        <Avatar name={username} src={avatarUrl} size="md" />
       </button>
 
       {open && (
@@ -52,7 +52,8 @@ export function UserMenu({ username, onSignOut }) {
           >
             Meu perfil
           </Link>
-          <Link
+          
+          {/* <Link
             className={ITEM}
             role="menuitem"
             to={`/u/${username}/diario`}
@@ -67,7 +68,8 @@ export function UserMenu({ username, onSignOut }) {
             onClick={() => setOpen(false)}
           >
             Watchlist
-          </Link>
+          </Link> */}
+          
           <Link
             className={ITEM}
             role="menuitem"

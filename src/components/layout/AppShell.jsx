@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { TopBar } from './TopBar';
 import { Footer } from './Footer';
-import { Modal } from '../ui';
+import { LogFilmModal } from './LogFilmModal';
 import { useAuth } from '../../auth';
 
 export function AppShell() {
@@ -13,6 +13,7 @@ export function AppShell() {
     <div className="flex min-h-full flex-col">
       <TopBar
         username={session?.username ?? ''}
+        avatarUrl={session?.avatarUrl}
         onLogFilm={() => setLogOpen(true)}
         onSignOut={signOut}
       />
@@ -25,16 +26,7 @@ export function AppShell() {
 
       <Footer />
 
-      <Modal
-        open={logOpen}
-        title="Registrar filme"
-        onClose={() => setLogOpen(false)}
-      >
-        <p className="text-muted">
-          O formulário de registro — buscar filme, data assistida, nota,
-          rewatch, resenha e tags — é a entrega principal da Sprint 4.
-        </p>
-      </Modal>
+      <LogFilmModal open={logOpen} onClose={() => setLogOpen(false)} />
     </div>
   );
 }

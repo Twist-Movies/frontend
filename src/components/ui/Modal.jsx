@@ -3,12 +3,18 @@ import { Button } from './Button';
 
 export function Modal({ open, title, onClose, children, footer }) {
   const panelRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  // Guarda o último onClose sem refazer o foco/scroll a cada render do pai.
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKeyDown);
 
@@ -20,7 +26,7 @@ export function Modal({ open, title, onClose, children, footer }) {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
