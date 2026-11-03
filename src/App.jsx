@@ -1,27 +1,13 @@
-import Header from './components/Header';
-import Hero from './components/Hero';
-import MovieCarousel from './components/MovieCarousel';
-import About from './components/About';
-import Footer from './components/Footer';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './auth';
+import { AppRoutes } from './routes';
 
-import './App.css';
-
-function App() {
+export default function App() {
   return (
-    <>
-      <Header />
-
-      <main>
-        <Hero />
-
-        <MovieCarousel />
-
-        <About />
-      </main>
-
-      <Footer />
-    </>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;
