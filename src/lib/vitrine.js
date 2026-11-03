@@ -1,9 +1,11 @@
+import { descobrirFilmes } from '../api/discover';
 import { buscarFilmes } from '../api/movies';
 import { anoDe, imagemTmdb, notaEm5 } from './tmdbImage';
 
-// O back ainda não tem uma rota de "populares". Enquanto isso, a vitrine é uma
-// lista curada de títulos consultados na busca pública (/movies/search/).
-// O ano ajuda a escolher a obra certa quando há refilmagens ou homônimos.
+// A vitrine usa o catálogo do back (/movies/discover/, ordenado por
+// popularidade). Se a rota falhar, cai para uma lista curada de títulos
+// consultados na busca pública (/movies/search/). O ano ajuda a escolher a
+// obra certa quando há refilmagens ou homônimos.
 export const VITRINE = [
   { titulo: 'Cidade de Deus', ano: 2002 },
   { titulo: 'Bacurau', ano: 2019 },
@@ -19,7 +21,8 @@ export const VITRINE = [
   { titulo: 'Amélie Poulain', ano: 2001 },
 ];
 
-const CHAVE_CACHE = 'twist:vitrine:v1';
+const CHAVE_CACHE = 'twist:vitrine:v2';
+const LIMITE_DO_CATALOGO = 18;
 const VALIDADE_MS = 6 * 60 * 60 * 1000;
 
 function lerCache() {
@@ -61,12 +64,20 @@ function paraItem(filme) {
   };
 }
 
-// Devolve os filmes da vitrine. Falhas isoladas são ignoradas; só dá erro se
-// nenhuma consulta funcionar (aí o primeiro erro é repassado).
-export async function carregarVitrine() {
-  const emCache = lerCache();
-  if (emCache) return emCache;
+async function viaCatalogo() {
+  const { results = [] } = await descobrirFilmes({
+    page: 1,
+    sort: 'popularity',
+  });
+  return results
+    .filter((filme) => filme.poster_path)
+    .slice(0, LIMITE_DO_CATALOGO)
+    .map(paraItem);
+}
 
+// Falhas isoladas são ignoradas; só dá erro se nenhuma consulta funcionar
+// (aí o primeiro erro é repassado).
+async function viaListaCurada() {
   const respostas = await Promise.allSettled(
     VITRINE.map(({ titulo }) => buscarFilmes({ q: titulo })),
   );
@@ -76,11 +87,24 @@ export async function carregarVitrine() {
     throw falha.reason;
   }
 
-  const itens = respostas.flatMap((resposta, i) => {
+  return respostas.flatMap((resposta, i) => {
     if (resposta.status !== 'fulfilled') return [];
     const filme = escolher(resposta.value.results ?? [], VITRINE[i].ano);
     return filme ? [paraItem(filme)] : [];
   });
+}
+
+export async function carregarVitrine() {
+  const emCache = lerCache();
+  if (emCache) return emCache;
+
+  let itens;
+  try {
+    itens = await viaCatalogo();
+    if (itens.length === 0) itens = await viaListaCurada();
+  } catch {
+    itens = await viaListaCurada();
+  }
 
   const unicos = [...new Map(itens.map((item) => [item.id, item])).values()];
   if (unicos.length > 0) gravarCache(unicos);
