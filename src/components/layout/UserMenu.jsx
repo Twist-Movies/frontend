@@ -52,7 +52,8 @@ export function UserMenu({ username, avatarUrl, onSignOut }) {
           >
             Meu perfil
           </Link>
-          <Link
+          
+          {/* <Link
             className={ITEM}
             role="menuitem"
             to={`/u/${username}/diario`}
@@ -67,7 +68,8 @@ export function UserMenu({ username, avatarUrl, onSignOut }) {
             onClick={() => setOpen(false)}
           >
             Watchlist
-          </Link>
+          </Link> */}
+          
           <Link
             className={ITEM}
             role="menuitem"

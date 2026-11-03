@@ -109,7 +109,7 @@ export default function Feed() {
         <SectionTitle>Atividade e populares</SectionTitle>
         <EmptyState
           title="Em breve"
-          description="A atividade de quem você segue e os filmes populares chegam quando o back-end oferecer esses dados."
+          description="Acompanhe a atividade de quem você segue e os filmes que estão em alta!"
         />
       </section>
     </div>
