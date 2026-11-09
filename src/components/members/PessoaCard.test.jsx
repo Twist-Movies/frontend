@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import { renderWithRouter } from '../../test/utils';
 import { PessoaCard } from './PessoaCard';
 
 const PESSOA = {
@@ -11,9 +13,18 @@ const PESSOA = {
   avatar_url: null,
 };
 
+function Local() {
+  const { pathname, state } = useLocation();
+  return (
+    <p data-testid="local">
+      {pathname} {state?.pessoa?.id}
+    </p>
+  );
+}
+
 describe('PessoaCard', () => {
   it('mostra nome, usuário e o detalhe', () => {
-    render(
+    renderWithRouter(
       <PessoaCard
         pessoa={PESSOA}
         seguindo={false}
@@ -28,7 +39,7 @@ describe('PessoaCard', () => {
   });
 
   it('usa o username quando a pessoa não tem nome', () => {
-    render(
+    renderWithRouter(
       <PessoaCard
         pessoa={{ ...PESSOA, first_name: '', last_name: '' }}
         seguindo={false}
@@ -41,7 +52,7 @@ describe('PessoaCard', () => {
 
   it('oferece seguir e avisa quem foi clicado', async () => {
     const onAlternar = vi.fn();
-    render(<PessoaCard pessoa={PESSOA} seguindo={false} onAlternar={onAlternar} />);
+    renderWithRouter(<PessoaCard pessoa={PESSOA} seguindo={false} onAlternar={onAlternar} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Seguir ana' }));
 
@@ -49,7 +60,7 @@ describe('PessoaCard', () => {
   });
 
   it('oferece deixar de seguir quando já segue', () => {
-    render(<PessoaCard pessoa={PESSOA} seguindo onAlternar={vi.fn()} />);
+    renderWithRouter(<PessoaCard pessoa={PESSOA} seguindo onAlternar={vi.fn()} />);
 
     expect(
       screen.getByRole('button', { name: 'Deixar de seguir ana' }),
@@ -57,8 +68,25 @@ describe('PessoaCard', () => {
   });
 
   it('desabilita o botão enquanto a ação está em andamento', () => {
-    render(<PessoaCard pessoa={PESSOA} seguindo={false} ocupado onAlternar={vi.fn()} />);
+    renderWithRouter(<PessoaCard pessoa={PESSOA} seguindo={false} ocupado onAlternar={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Seguir ana' })).toBeDisabled();
+  });
+
+  it('leva ao perfil da pessoa, com os dados dela na navegação', async () => {
+    renderWithRouter(
+      <>
+        <PessoaCard pessoa={PESSOA} seguindo={false} onAlternar={vi.fn()} />
+        <Routes>
+          <Route path="*" element={<Local />} />
+        </Routes>
+      </>,
+    );
+    const link = screen.getByRole('link', { name: 'Ana Souza' });
+    expect(link).toHaveAttribute('href', '/u/ana');
+
+    await userEvent.click(link);
+
+    expect(screen.getByTestId('local')).toHaveTextContent('/u/ana 5');
   });
 });
