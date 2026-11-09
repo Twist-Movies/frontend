@@ -54,6 +54,22 @@ describe('Members', () => {
     expect(screen.getByRole('tab', { name: 'Seguidores (2)' })).toBeInTheDocument();
   });
 
+  it('leva ao perfil de cada pessoa das abas', async () => {
+    renderizar();
+
+    expect(await screen.findByRole('link', { name: 'ana' })).toHaveAttribute(
+      'href',
+      '/u/ana',
+    );
+
+    await userEvent.click(screen.getByRole('tab', { name: /Seguidores/ }));
+
+    expect(screen.getByRole('link', { name: 'bia' })).toHaveAttribute(
+      'href',
+      '/u/bia',
+    );
+  });
+
   it('descobre o id pela API quando a sessão guardada não tem', async () => {
     renderizar({ username: 'davi', displayName: 'Davi' });
 
