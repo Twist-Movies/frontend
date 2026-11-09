@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { renderWithRouter } from '../../test/utils';
 import { curtirResenha, descurtirResenha } from '../../api/reviews';
@@ -26,6 +27,15 @@ beforeEach(() => {
   descurtirResenha.mockResolvedValue(null);
 });
 
+function Local() {
+  const { pathname, state } = useLocation();
+  return (
+    <p data-testid="local">
+      {pathname} {state?.pessoa?.id}
+    </p>
+  );
+}
+
 describe('ReviewItem', () => {
   it('mostra autor, texto e link para a resenha', () => {
     renderWithRouter(<ReviewItem review={REVIEW} onChange={vi.fn()} />);
@@ -36,6 +46,23 @@ describe('ReviewItem', () => {
       'href',
       '/resenha/1',
     );
+  });
+
+  it('leva ao perfil do autor, com os dados dele na navegação', async () => {
+    renderWithRouter(
+      <>
+        <ReviewItem review={REVIEW} onChange={vi.fn()} />
+        <Routes>
+          <Route path="*" element={<Local />} />
+        </Routes>
+      </>,
+    );
+    const link = screen.getByRole('link', { name: 'ana' });
+    expect(link).toHaveAttribute('href', '/u/ana');
+
+    await userEvent.click(link);
+
+    expect(screen.getByTestId('local')).toHaveTextContent('/u/ana 2');
   });
 
   it('esconde resenhas com spoiler até o leitor pedir', async () => {

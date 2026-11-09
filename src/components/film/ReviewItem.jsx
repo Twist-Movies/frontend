@@ -8,6 +8,12 @@ export function ReviewItem({ review, onChange }) {
   const [revelado, setRevelado] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const escondido = review.contains_spoiler && !revelado;
+  // O perfil abre com os dados do autor que já temos (o back não consulta
+  // perfil por username).
+  const perfil = {
+    to: `/u/${review.author.username}`,
+    state: { pessoa: review.author },
+  };
 
   async function alternarCurtida() {
     if (ocupado) return;
@@ -30,10 +36,14 @@ export function ReviewItem({ review, onChange }) {
   return (
     <Card>
       <article className="flex items-start gap-3">
-        <Avatar name={review.author.username} src={review.author.avatar_url} />
+        <Link {...perfil} tabIndex={-1} aria-hidden="true">
+          <Avatar name={review.author.username} src={review.author.avatar_url} />
+        </Link>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
-            <span className="font-bold">{review.author.username}</span>
+            <Link {...perfil} className="font-bold hover:text-accent">
+              {review.author.username}
+            </Link>
             <Link
               to={`/resenha/${review.id}`}
               className="text-faint hover:text-fg"

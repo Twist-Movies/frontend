@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   Avatar,
   Button,
@@ -9,14 +9,18 @@ import {
   Skeleton,
   Tabs,
 } from '../components/ui';
+import { FormAviso } from '../auth/FormAviso';
 import { useAuth } from '../auth';
 import {
+  deixarDeSeguir,
   listarSeguidores,
   listarSeguindo,
   obterMeuPerfil,
+  seguirUsuario,
 } from '../api/users';
 import { useAsync } from '../lib/useAsync';
 import { nomeCompleto } from '../lib/formatar';
+import { carregarPerfilPublico } from '../lib/perfilPublico';
 
 async function carregarPerfil() {
   const perfil = await obterMeuPerfil();
@@ -39,6 +43,7 @@ function Pessoas({ pagina }) {
           <li key={pessoa.id}>
             <Link
               to={`/u/${pessoa.username}`}
+              state={{ pessoa }}
               className="flex items-center gap-3 rounded-lg p-2 hover:bg-surface-2"
             >
               <Avatar name={pessoa.username} src={pessoa.avatar_url} />
@@ -60,7 +65,6 @@ function Pessoas({ pagina }) {
 }
 
 function MeuPerfil() {
-  const [aba, setAba] = useState('seguidores');
   const { data, error, loading, recarregar } = useAsync(carregarPerfil, []);
 
   if (error) return <ErrorState error={error} onRetry={recarregar} />;
@@ -91,39 +95,116 @@ function MeuPerfil() {
         </div>
       </Card>
 
-      <section aria-label="Conexões">
-        <Tabs
-          active={aba}
-          onChange={setAba}
-          items={[
-            { id: 'seguidores', label: `Seguidores (${seguidores.count})` },
-            { id: 'seguindo', label: `Seguindo (${seguindo.count})` },
-          ]}
-        />
-        <Pessoas pagina={aba === 'seguidores' ? seguidores : seguindo} />
-      </section>
+      <Conexoes seguidores={seguidores} seguindo={seguindo} />
     </div>
   );
 }
 
-export default function Profile() {
-  const { username } = useParams();
-  const { session } = useAuth();
+function Conexoes({ seguidores, seguindo }) {
+  const [aba, setAba] = useState('seguidores');
 
-  // O back ainda não tem consulta de perfil por username: só o próprio.
-  if (session?.username?.toLowerCase() !== username.toLowerCase()) {
+  return (
+    <section aria-label="Conexões">
+      <Tabs
+        active={aba}
+        onChange={setAba}
+        items={[
+          { id: 'seguidores', label: `Seguidores (${seguidores.count})` },
+          { id: 'seguindo', label: `Seguindo (${seguindo.count})` },
+        ]}
+      />
+      <Pessoas pagina={aba === 'seguidores' ? seguidores : seguindo} />
+    </section>
+  );
+}
+
+function PerfilPublico({ username, pessoaConhecida }) {
+  const { session } = useAuth();
+  const [ocupado, setOcupado] = useState(false);
+  const [falha, setFalha] = useState(null);
+  const { data, error, loading, recarregar, definir } = useAsync(
+    () => carregarPerfilPublico({ username, pessoaConhecida, meuId: session?.id }),
+    [username, session?.id],
+  );
+
+  if (error) return <ErrorState error={error} onRetry={recarregar} />;
+  if (!data) {
+    if (loading) return <Skeleton height={120} />;
     return (
       <EmptyState
         title={`Perfil de @${username}`}
-        description="Os perfis de outros membros ainda não estão disponíveis."
+        description="Este perfil só abre a partir de uma resenha ou das suas conexões."
         action={
-          <Link to="/" className="text-accent">
-            Voltar ao início
+          <Link to="/membros" className="text-accent">
+            Ver membros
           </Link>
         }
       />
     );
   }
 
-  return <MeuPerfil />;
+  const { pessoa, seguidores, seguindo, euSigo } = data;
+
+  async function alternar() {
+    setOcupado(true);
+    setFalha(null);
+    try {
+      if (euSigo) await deixarDeSeguir(pessoa.id);
+      else await seguirUsuario(pessoa.id);
+      // Atualiza a tela na hora e confirma com o servidor em seguida.
+      definir({
+        ...data,
+        euSigo: !euSigo,
+        seguidores: { ...seguidores, count: seguidores.count + (euSigo ? -1 : 1) },
+      });
+      recarregar();
+    } catch (e) {
+      setFalha(e);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card className="flex flex-wrap items-center gap-4">
+        <Avatar name={pessoa.username} src={pessoa.avatar_url} size="lg" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h1 className="text-2xl font-black">
+            {nomeCompleto(pessoa) || pessoa.username}
+          </h1>
+          <span className="text-sm text-faint">@{pessoa.username}</span>
+        </div>
+        <Button
+          variant={euSigo ? 'ghost' : 'primary'}
+          disabled={ocupado}
+          aria-label={`${euSigo ? 'Deixar de seguir' : 'Seguir'} ${pessoa.username}`}
+          onClick={alternar}
+        >
+          {euSigo ? 'Deixar de seguir' : 'Seguir'}
+        </Button>
+      </Card>
+
+      <FormAviso erro={falha} />
+      <Conexoes seguidores={seguidores} seguindo={seguindo} />
+    </div>
+  );
+}
+
+export default function Profile() {
+  const { username } = useParams();
+  const { state } = useLocation();
+  const { session } = useAuth();
+
+  if (session?.username?.toLowerCase() === username.toLowerCase()) {
+    return <MeuPerfil />;
+  }
+
+  return (
+    <PerfilPublico
+      key={username}
+      username={username}
+      pessoaConhecida={state?.pessoa}
+    />
+  );
 }
