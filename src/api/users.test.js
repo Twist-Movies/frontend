@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
-import { setTokens } from './tokens';
+import { setAccessToken } from './tokens';
 import {
   deixarDeSeguir,
   editarMeuPerfil,
@@ -15,7 +15,7 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
-  setTokens({ access: 'acc', refresh: 'ref' });
+  setAccessToken('acc');
   fetchMock = instalarFetch();
   fetchMock.mockResolvedValue(json(200, {}));
 });

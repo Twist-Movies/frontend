@@ -4,45 +4,55 @@ import { AuthProvider } from './AuthContext';
 import { useAuth } from './useAuth';
 import { ApiError } from '../api/errors';
 import { request } from '../api/client';
-import { getTokens, setTokens } from '../api/tokens';
+import { clearAccessToken, getAccessToken } from '../api/tokens';
 
 const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
 
 const DAVI = { identifier: 'davi@twist.app', password: 'twist1234' };
 
 describe('AuthProvider (modo simulado)', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    clearAccessToken();
+  });
 
-  it('começa como visitante sem sessão salva', () => {
+  it('mostra "carregando" enquanto tenta restaurar e vira visitante sem cookie', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    expect(result.current.status).toBe('visitante');
+    expect(result.current.status).toBe('carregando');
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
     expect(result.current.session).toBeNull();
   });
 
-  it('recupera a sessão salva quando há tokens', () => {
-    setTokens({ access: 'a', refresh: 'r' });
-    localStorage.setItem(
-      'twist:session',
-      JSON.stringify({ username: 'bia', displayName: 'Bia' }),
+  it('restaura a sessão pelo "cookie" simulado, sem ler perfil do storage', async () => {
+    const primeiro = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() =>
+      expect(primeiro.result.current.status).toBe('visitante'),
     );
+    await act(() => primeiro.result.current.signIn(DAVI));
+    primeiro.unmount();
+    clearAccessToken(); // "recarregar a página": a memória some
 
     const { result } = renderHook(() => useAuth(), { wrapper });
-
-    expect(result.current.status).toBe('autenticado');
-    expect(result.current.session?.username).toBe('bia');
+    expect(result.current.status).toBe('carregando');
+    await waitFor(() => expect(result.current.status).toBe('autenticado'));
+    expect(result.current.session?.username).toBe('davi');
+    expect(localStorage.length).toBe(0);
   });
 
-  it('ignora o perfil salvo se os tokens sumiram', () => {
+  it('apaga o perfil legado (com e-mail) do localStorage', async () => {
     localStorage.setItem('twist:session', JSON.stringify({ username: 'bia' }));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
 
-    expect(result.current.status).toBe('visitante');
+    expect(localStorage.getItem('twist:session')).toBeNull();
   });
 
-  it('autentica, guarda o perfil e os tokens ao entrar', async () => {
+  it('autentica ao entrar sem gravar nada no armazenamento', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
 
     await act(() => result.current.signIn(DAVI));
 
@@ -51,24 +61,25 @@ describe('AuthProvider (modo simulado)', () => {
       username: 'davi',
       displayName: 'Davi Almeida',
     });
-    expect(localStorage.getItem('twist:session')).toContain('davi');
-    expect(getTokens()).not.toBeNull();
+    expect(localStorage.length).toBe(0);
+    expect(getAccessToken()).not.toBeNull();
   });
 
   it('propaga a falha de credencial sem criar sessão', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
 
     await expect(
       act(() => result.current.signIn({ ...DAVI, password: 'errada' })),
     ).rejects.toBeInstanceOf(ApiError);
 
     expect(result.current.status).toBe('visitante');
-    expect(localStorage.getItem('twist:session')).toBeNull();
   });
 
   it('cadastra e já deixa a pessoa autenticada', async () => {
     const sufixo = Math.random().toString(36).slice(2, 8);
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
 
     await act(() =>
       result.current.signUp({
@@ -88,15 +99,31 @@ describe('AuthProvider (modo simulado)', () => {
     });
   });
 
-  it('encerra a sessão, limpa perfil e tokens', async () => {
+  it('encerra a sessão, limpa memória e o cookie simulado', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
 
     await act(() => result.current.signIn(DAVI));
     await act(() => result.current.signOut());
 
     expect(result.current.status).toBe('visitante');
-    expect(localStorage.getItem('twist:session')).toBeNull();
-    expect(getTokens()).toBeNull();
+    expect(getAccessToken()).toBeNull();
+    expect(sessionStorage.length).toBe(0);
+  });
+
+  it('signOut({ remoto: false }) limpa só localmente, sem chamar logout', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
+    await act(() => result.current.signIn(DAVI));
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await act(() => result.current.signOut({ remoto: false }));
+
+    expect(result.current.status).toBe('visitante');
+    expect(getAccessToken()).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });
 
@@ -105,7 +132,10 @@ describe('AuthProvider com sessão expirada na API', () => {
 
   it('volta a ser visitante quando o refresh é recusado', async () => {
     localStorage.clear();
+    sessionStorage.clear();
+    clearAccessToken();
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('visitante'));
     await act(() => result.current.signIn(DAVI));
 
     vi.stubGlobal(

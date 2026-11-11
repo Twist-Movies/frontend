@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { clearAccessToken, getAccessToken } from '../api/tokens';
 import { AuthProvider } from './AuthContext';
 import { useAuth } from './useAuth';
 import { instalarFetch, json } from '../test/fetch';
@@ -17,6 +18,7 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
+  clearAccessToken();
   fetchMock = instalarFetch();
 });
 
@@ -30,7 +32,7 @@ describe('AuthProvider (API real)', () => {
     vi.stubEnv('VITE_API_MOCK', 'false');
     fetchMock.mockImplementation(async (url) =>
       url.endsWith('/accounts/login/')
-        ? json(200, { access: 'a', refresh: 'r', username: 'davi' })
+        ? json(200, { access: 'a', username: 'davi' })
         : json(200, PERFIL),
     );
     const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
@@ -45,14 +47,14 @@ describe('AuthProvider (API real)', () => {
       displayName: 'Davi Almeida',
       avatarUrl: 'https://cdn/x.png',
     });
-    expect(JSON.parse(localStorage.getItem('twist:session')).id).toBe(4);
+    expect(localStorage.length).toBe(0);
   });
 
   it('mantém a sessão básica se /users/me/ falhar', async () => {
     vi.stubEnv('VITE_API_MOCK', 'false');
     fetchMock.mockImplementation(async (url) =>
       url.endsWith('/accounts/login/')
-        ? json(200, { access: 'a', refresh: 'r', username: 'davi' })
+        ? json(200, { access: 'a', username: 'davi' })
         : json(500, {}),
     );
     const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
@@ -65,7 +67,7 @@ describe('AuthProvider (API real)', () => {
     expect(result.current.session.username).toBe('davi');
   });
 
-  it('updateSession mescla os campos e persiste', () => {
+  it('updateSession mescla os campos (sem persistir)', () => {
     const wrapper = ({ children }) => (
       <AuthProvider sessaoInicial={{ username: 'davi', displayName: 'Davi' }}>
         {children}
@@ -80,8 +82,69 @@ describe('AuthProvider (API real)', () => {
       displayName: 'Davi',
       avatarUrl: 'https://cdn/y.png',
     });
-    expect(JSON.parse(localStorage.getItem('twist:session')).avatarUrl).toBe(
-      'https://cdn/y.png',
-    );
+    expect(localStorage.length).toBe(0);
+  });
+
+  describe('restauração no boot', () => {
+    beforeEach(() => vi.stubEnv('VITE_API_MOCK', 'false'));
+
+    it('restaura via refresh (cookie) + /users/me/ e mostra "carregando" antes', async () => {
+      fetchMock.mockImplementation(async (url) =>
+        url.endsWith('/accounts/token/refresh/')
+          ? json(200, { access: 'novo' })
+          : json(200, PERFIL),
+      );
+      const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+      expect(result.current.status).toBe('carregando');
+      await waitFor(() => expect(result.current.status).toBe('autenticado'));
+
+      expect(result.current.session).toMatchObject({ username: 'davi', id: 4 });
+      expect(getAccessToken()).toBe('novo');
+      const [urlRefresh, opcoes] = fetchMock.mock.calls[0];
+      expect(urlRefresh).toBe('/api/accounts/token/refresh/');
+      expect(opcoes.credentials).toBe('include');
+      expect(opcoes.headers['X-Twist-Client']).toBe('web');
+      expect(localStorage.length).toBe(0);
+      expect(sessionStorage.length).toBe(0);
+    });
+
+    it('vira visitante quando o refresh falha (sem cookie)', async () => {
+      fetchMock.mockResolvedValue(json(401, { detail: 'sem cookie' }));
+      const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+      await waitFor(() => expect(result.current.status).toBe('visitante'));
+      expect(result.current.session).toBeNull();
+      expect(getAccessToken()).toBeNull();
+    });
+
+    it('vira visitante se o refresh vale mas /users/me/ falha', async () => {
+      fetchMock.mockImplementation(async (url) =>
+        url.endsWith('/accounts/token/refresh/')
+          ? json(200, { access: 'novo' })
+          : json(500, {}),
+      );
+      const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+      await waitFor(() => expect(result.current.status).toBe('visitante'));
+      expect(getAccessToken()).toBeNull();
+    });
+
+    it('vira visitante se a restauração lançar erro inesperado', async () => {
+      fetchMock.mockRejectedValue(new TypeError('offline'));
+      const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+      await waitFor(() => expect(result.current.status).toBe('visitante'));
+    });
+
+    it('não restaura quando sessaoInicial é informada', () => {
+      const wrapper = ({ children }) => (
+        <AuthProvider sessaoInicial={null}>{children}</AuthProvider>
+      );
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      expect(result.current.status).toBe('visitante');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 });

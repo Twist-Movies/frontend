@@ -1,76 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearStoredSession, loadStoredSession, storeSession } from './session';
-import { setTokens } from '../api/tokens';
+import { limparSessaoLegada } from './session';
 
-const SESSAO = {
-  username: 'davi',
-  displayName: 'Davi Almeida',
-  email: 'davi@twist.app',
-  avatarUrl: undefined,
-};
-
-describe('persistência da sessão', () => {
+describe('limpeza da sessão legada', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
-    setTokens({ access: 'a', refresh: 'r' });
   });
 
-  it('guarda e recupera a sessão', () => {
-    storeSession(SESSAO);
-
-    expect(loadStoredSession()).toEqual(SESSAO);
-  });
-
-  it('não recupera o perfil sem tokens', () => {
-    storeSession(SESSAO);
-    localStorage.removeItem('twist:tokens');
-
-    expect(loadStoredSession()).toBeNull();
-  });
-
-  it('devolve null quando não há nada guardado', () => {
-    expect(loadStoredSession()).toBeNull();
-  });
-
-  it('descarta conteúdo corrompido', () => {
-    localStorage.setItem('twist:session', '{isso não é json');
-
-    expect(loadStoredSession()).toBeNull();
-  });
-
-  it('descarta sessão sem username', () => {
+  it('apaga o perfil (com e-mail) que versões antigas gravavam', () => {
     localStorage.setItem(
       'twist:session',
-      JSON.stringify({ displayName: 'Só o nome' }),
+      '{"username":"davi","email":"a@b.c"}',
     );
-
-    expect(loadStoredSession()).toBeNull();
-  });
-
-  it('usa o username como nome de exibição quando ele falta', () => {
-    localStorage.setItem('twist:session', JSON.stringify({ username: 'bia' }));
-
-    expect(loadStoredSession()?.displayName).toBe('bia');
-  });
-
-  it('limpa a sessão', () => {
-    storeSession(SESSAO);
-    clearStoredSession();
-
-    expect(loadStoredSession()).toBeNull();
+    limparSessaoLegada();
+    expect(localStorage.getItem('twist:session')).toBeNull();
   });
 
   it('não quebra quando o armazenamento está bloqueado', () => {
-    const bloqueado = () => {
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
       throw new Error('bloqueado');
-    };
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(bloqueado);
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(bloqueado);
-    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(bloqueado);
-
-    expect(() => storeSession(SESSAO)).not.toThrow();
-    expect(loadStoredSession()).toBeNull();
-    expect(() => clearStoredSession()).not.toThrow();
+    });
+    expect(() => limparSessaoLegada()).not.toThrow();
   });
 });

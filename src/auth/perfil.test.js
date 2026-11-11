@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json } from '../test/fetch';
-import { setTokens } from '../api/tokens';
+import { setAccessToken } from '../api/tokens';
 import { completarSessao, sessaoDoPerfil } from './perfil';
 
 const PERFIL = {
@@ -24,7 +24,12 @@ describe('sessaoDoPerfil', () => {
   });
 
   it('usa o username quando não há nome, e omite avatar nulo', () => {
-    const sessao = sessaoDoPerfil({ ...PERFIL, first_name: '', last_name: '', avatar_url: null });
+    const sessao = sessaoDoPerfil({
+      ...PERFIL,
+      first_name: '',
+      last_name: '',
+      avatar_url: null,
+    });
     expect(sessao.displayName).toBe('davi');
     expect(sessao.avatarUrl).toBeUndefined();
   });
@@ -35,7 +40,7 @@ describe('completarSessao', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    setTokens({ access: 'a', refresh: 'r' });
+    setAccessToken('a');
     fetchMock = instalarFetch();
   });
 
