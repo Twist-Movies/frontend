@@ -13,3 +13,10 @@ export { Tabs } from './Tabs';
 export { SectionTitle } from './SectionTitle';
 export { ErrorState } from './ErrorState';
 export { Paginacao } from './Paginacao';
+export {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from './Carousel';
