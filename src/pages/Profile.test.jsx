@@ -138,7 +138,7 @@ describe('Profile (perfil de outro membro)', () => {
     });
   });
 
-  it('mostra o perfil de quem veio de uma resenha, com contadores e botão de seguir', async () => {
+  it('mostra o perfil de quem veio de um comentário, com contadores e botão de seguir', async () => {
     renderizar(daNavegacao());
 
     expect(

@@ -133,7 +133,7 @@ function PerfilPublico({ username, pessoaConhecida }) {
     return (
       <EmptyState
         title={`Perfil de @${username}`}
-        description="Este perfil só abre a partir de uma resenha ou das suas conexões."
+        description="Este perfil só abre a partir de um comentário ou das suas conexões."
         action={
           <Link to="/membros" className="text-accent">
             Ver membros

@@ -9,7 +9,7 @@ export default function SeriesDetail() {
         'Pôster, sinopse, criadores, elenco e temporadas',
         'Nota média da série e nota por temporada',
         'Ações: registrar episódio ou temporada, curtir, watchlist, avaliar',
-        'Resenhas populares e listas que contêm a série',
+        'Comentários populares e listas que contêm a série',
       ]}
     />
   );

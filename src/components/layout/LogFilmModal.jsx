@@ -124,8 +124,8 @@ export function LogFilmModal({ open, onClose }) {
               label="Sua nota"
             />
             <Textarea
-              aria-label="Resenha (opcional)"
-              placeholder="Resenha (opcional)"
+              aria-label="Comentário (opcional)"
+              placeholder="Comentário (opcional)"
               maxLength={5000}
               value={estado.texto}
               onChange={(e) => alterar({ texto: e.target.value })}

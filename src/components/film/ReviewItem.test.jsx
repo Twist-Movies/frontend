@@ -37,14 +37,14 @@ function Local() {
 }
 
 describe('ReviewItem', () => {
-  it('mostra autor, texto e link para a resenha', () => {
+  it('mostra autor, texto e link para o comentário', () => {
     renderWithRouter(<ReviewItem review={REVIEW} onChange={vi.fn()} />);
 
     expect(screen.getByText('ana')).toBeInTheDocument();
     expect(screen.getByText('Muito bom')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '20/10/2026' })).toHaveAttribute(
       'href',
-      '/resenha/1',
+      '/comentario/1',
     );
   });
 
@@ -65,7 +65,7 @@ describe('ReviewItem', () => {
     expect(screen.getByTestId('local')).toHaveTextContent('/u/ana 2');
   });
 
-  it('esconde resenhas com spoiler até o leitor pedir', async () => {
+  it('esconde comentários com spoiler até o leitor pedir', async () => {
     renderWithRouter(
       <ReviewItem review={{ ...REVIEW, contains_spoiler: true }} onChange={vi.fn()} />,
     );

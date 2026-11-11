@@ -48,12 +48,15 @@ beforeEach(() => {
 });
 
 describe('LogFilmModal', () => {
-  it('busca o filme e registra com nota e resenha', async () => {
+  it('busca o filme e registra com nota e comentário', async () => {
     const { onClose } = renderizar();
     await escolherMatrix();
 
     await userEvent.click(screen.getByRole('radio', { name: '4 estrelas' }));
-    await userEvent.type(screen.getByLabelText('Resenha (opcional)'), 'Ótimo');
+    await userEvent.type(
+      screen.getByLabelText('Comentário (opcional)'),
+      'Ótimo',
+    );
     await userEvent.click(
       screen.getByRole('button', { name: 'Registrar como assistido' }),
     );
@@ -69,7 +72,7 @@ describe('LogFilmModal', () => {
     expect(screen.getByTestId('local')).toHaveTextContent('/filme/603');
   });
 
-  it('registra só como assistido quando não há nota nem resenha', async () => {
+  it('registra só como assistido quando não há nota nem comentário', async () => {
     renderizar();
     await escolherMatrix();
 

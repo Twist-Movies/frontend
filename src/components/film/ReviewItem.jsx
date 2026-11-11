@@ -45,7 +45,7 @@ export function ReviewItem({ review, onChange }) {
               {review.author.username}
             </Link>
             <Link
-              to={`/resenha/${review.id}`}
+              to={`/comentario/${review.id}`}
               className="text-faint hover:text-fg"
             >
               {formatarData(review.created_at)}
@@ -54,7 +54,9 @@ export function ReviewItem({ review, onChange }) {
 
           {escondido ? (
             <div className="flex flex-col items-start gap-2">
-              <p className="text-sm text-muted">Esta resenha contém spoilers.</p>
+              <p className="text-sm text-muted">
+                Este comentário contém spoilers.
+              </p>
               <Button size="sm" onClick={() => setRevelado(true)}>
                 Mostrar mesmo assim
               </Button>

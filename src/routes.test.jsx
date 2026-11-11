@@ -34,7 +34,7 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument();
   });
 
-  it.each(['/filme/3', '/lista/1', '/resenha/1', '/u/davi'])(
+  it.each(['/filme/3', '/lista/1', '/comentario/1', '/u/davi'])(
     'resolve a rota dinâmica %s para uma tela que consulta a API',
     async (route) => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('off')));

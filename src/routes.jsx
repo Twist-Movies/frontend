@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AppShell, PublicShell } from './components/layout';
 import { RedirectIfAuthenticated, RequireAuth } from './auth';
 import { isEnabled } from './config/features';
@@ -26,6 +26,12 @@ import NotFound from './pages/NotFound';
 
 export function AppRoutes() {
   return (
+// Links antigos (/resenha/:id) continuam funcionando.
+function RedirecionarComentario() {
+  const { reviewId } = useParams();
+  return <Navigate to={`/comentario/${reviewId}`} replace />;
+}
+
     <Routes>
       <Route element={<RedirectIfAuthenticated />}>
         <Route element={<PublicShell />}>
@@ -56,7 +62,11 @@ export function AppRoutes() {
 
           <Route path="listas" element={<Lists />} />
           <Route path="lista/:listId" element={<ListDetail />} />
-          <Route path="resenha/:reviewId" element={<ReviewDetail />} />
+          <Route path="comentario/:reviewId" element={<ReviewDetail />} />
+          <Route
+            path="resenha/:reviewId"
+            element={<RedirecionarComentario />}
+          />
 
           <Route path="membros" element={<Members />} />
           <Route path="u/:username" element={<Profile />} />

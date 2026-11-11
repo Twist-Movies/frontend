@@ -23,12 +23,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('api/reviews', () => {
-  it('lista as resenhas de um filme por página', async () => {
+  it('lista os comentários de um filme por página', async () => {
     await listarResenhas(603, 2);
     expect(ultimaChamada(fetchMock).url).toBe('/api/movies/603/reviews/?page=2');
   });
 
-  it('cria resenha enviando contains_spoiler em snake_case', async () => {
+  it('cria comentário enviando contains_spoiler em snake_case', async () => {
     await criarResenha(603, { content: 'Ótimo', containsSpoiler: true });
 
     const { url, opcoes } = ultimaChamada(fetchMock);
@@ -48,7 +48,7 @@ describe('api/reviews', () => {
     });
   });
 
-  it('consulta, edita e exclui uma resenha', async () => {
+  it('consulta, edita e exclui um comentário', async () => {
     await obterResenha(9);
     expect(ultimaChamada(fetchMock).url).toBe('/api/reviews/9/');
 

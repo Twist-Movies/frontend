@@ -230,8 +230,8 @@ function ExcluirConta({ username }) {
   return (
     <Card className="flex flex-col gap-3 border-danger">
       <p className="text-sm text-muted">
-        Excluir a conta apaga seu perfil, avaliações, resenhas e listas. Não dá
-        para desfazer.
+        Excluir a conta apaga seu perfil, avaliações, comentários e listas. Não
+        dá para desfazer.
       </p>
       <div>
         <Button variant="ghost" onClick={() => setAberto(true)}>
