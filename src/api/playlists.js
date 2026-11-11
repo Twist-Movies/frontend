@@ -30,3 +30,7 @@ export const adicionarFilmeNaPlaylist = (id, tmdbId) =>
 
 export const removerFilmeDaPlaylist = (id, tmdbId) =>
   request(`/playlists/${id}/movies/${tmdbId}/`, { method: 'DELETE' });
+
+// Playlists públicas da equipe Twist (rota pública, mesmo formato paginado).
+export const listarPlaylistsOficiais = (page = 1) =>
+  request(`/playlists/official/?page=${page}`, { auth: false });

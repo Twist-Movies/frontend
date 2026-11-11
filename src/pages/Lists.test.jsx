@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes, useParams } from 'react-router-dom';
 import { renderWithAuth } from '../test/utils';
-import { criarPlaylist, listarPlaylists } from '../api/playlists';
+import {
+  criarPlaylist,
+  listarPlaylists,
+  listarPlaylistsOficiais,
+} from '../api/playlists';
 import Lists from './Lists';
 
 vi.mock('../api/playlists', () => ({
   listarPlaylists: vi.fn(),
+  listarPlaylistsOficiais: vi.fn(),
   criarPlaylist: vi.fn(),
   editarPlaylist: vi.fn(),
 }));
@@ -45,6 +50,7 @@ const PAGINA = {
 beforeEach(() => {
   vi.clearAllMocks();
   listarPlaylists.mockResolvedValue(PAGINA);
+  listarPlaylistsOficiais.mockResolvedValue({ count: 0, results: [] });
 });
 
 describe('Lists', () => {
@@ -93,5 +99,54 @@ describe('Lists', () => {
       isPublic: true,
       cover: null,
     });
+  });
+
+  it('convida a criar a primeira lista e abre o formulário', async () => {
+    listarPlaylists.mockResolvedValue({ ...PAGINA, count: 0, results: [] });
+    renderizar();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Criar minha primeira lista' }),
+    );
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('mostra as listas da equipe Twist mesmo sem listas próprias', async () => {
+    listarPlaylists.mockResolvedValue({ ...PAGINA, count: 0, results: [] });
+    listarPlaylistsOficiais.mockResolvedValue({
+      count: 1,
+      next: null,
+      previous: null,
+      results: [
+        {
+          id: 30,
+          name: 'Clássicos Twist',
+          description: 'Da equipe',
+          is_public: true,
+        },
+      ],
+    });
+    renderizar();
+
+    const secao = await screen.findByRole('region', {
+      name: 'Listas da equipe Twist',
+    });
+    expect(
+      within(secao).getByRole('link', { name: /Clássicos Twist/ }),
+    ).toHaveAttribute('href', '/lista/30');
+    expect(
+      screen.getByText('Você ainda não criou nenhuma lista'),
+    ).toBeInTheDocument();
+  });
+
+  it('oculta a seção da equipe quando a rota falha', async () => {
+    listarPlaylistsOficiais.mockRejectedValue(new Error('falhou'));
+    renderizar();
+
+    await screen.findByRole('link', { name: /Favoritos/ });
+    expect(
+      screen.queryByRole('region', { name: 'Listas da equipe Twist' }),
+    ).toBeNull();
   });
 });

@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
-import { setTokens } from './tokens';
+import { setAccessToken } from './tokens';
 import {
   adicionarFilmeNaPlaylist,
   criarPlaylist,
   editarPlaylist,
   excluirPlaylist,
   listarPlaylists,
+  listarPlaylistsOficiais,
   obterPlaylist,
   removerFilmeDaPlaylist,
 } from './playlists';
@@ -15,9 +16,9 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
-  setTokens({ access: 'acc', refresh: 'ref' });
+  setAccessToken('acc');
   fetchMock = instalarFetch();
-  fetchMock.mockResolvedValue(json(200, {}));
+  fetchMock.mockImplementation(async () => json(200, {}));
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -32,7 +33,11 @@ describe('api/playlists', () => {
   });
 
   it('cria em JSON quando não há capa', async () => {
-    await criarPlaylist({ name: 'Favoritos', description: '', isPublic: false });
+    await criarPlaylist({
+      name: 'Favoritos',
+      description: '',
+      isPublic: false,
+    });
 
     const { url, opcoes } = ultimaChamada(fetchMock);
     expect(url).toBe('/api/playlists/');
@@ -78,5 +83,15 @@ describe('api/playlists', () => {
       '/api/playlists/7/movies/603/',
       'DELETE',
     ]);
+  });
+});
+
+describe('api/playlists oficiais', () => {
+  it('lista as playlists da equipe sem token', async () => {
+    await listarPlaylistsOficiais();
+
+    const { url, opcoes } = ultimaChamada(fetchMock);
+    expect(url).toBe('/api/playlists/official/?page=1');
+    expect(opcoes.headers?.Authorization).toBeUndefined();
   });
 });

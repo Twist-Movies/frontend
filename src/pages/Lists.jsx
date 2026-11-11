@@ -1,17 +1,40 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { ListVideo } from 'lucide-react';
 import {
-  Badge,
   Button,
-  Card,
   EmptyState,
   ErrorState,
   Paginacao,
+  SectionTitle,
   Skeleton,
 } from '../components/ui';
+import { ListaCard } from '../components/lists/ListaCard';
 import { PlaylistFormModal } from '../components/lists/PlaylistFormModal';
-import { listarPlaylists } from '../api/playlists';
+import { listarPlaylists, listarPlaylistsOficiais } from '../api/playlists';
 import { useAsync } from '../lib/useAsync';
+
+const GRADE = 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3';
+
+// Listas públicas da equipe. Se a rota falhar ou vier vazia, a seção some.
+function ListasDaEquipe() {
+  const { data, error } = useAsync(() => listarPlaylistsOficiais(1), []);
+
+  if (error || !data || (data.results ?? []).length === 0) return null;
+
+  return (
+    <section aria-label="Listas da equipe Twist" className="flex flex-col">
+      <SectionTitle>Listas da equipe Twist</SectionTitle>
+      <ul className={GRADE}>
+        {data.results.map((lista) => (
+          <li key={lista.id}>
+            <ListaCard lista={lista} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export default function Lists() {
   const [pagina, setPagina] = useState(1);
@@ -23,61 +46,52 @@ export default function Lists() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-black">Minhas listas</h1>
-        <Button variant="primary" onClick={() => setCriando(true)}>
-          + Nova lista
-        </Button>
-      </div>
+    <div className="flex flex-col gap-8">
+      <section aria-label="Minhas listas" className="flex flex-col gap-6">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-black sm:text-3xl">Minhas listas</h1>
+          <Button variant="primary" onClick={() => setCriando(true)}>
+            + Nova lista
+          </Button>
+        </div>
 
-      {error && <ErrorState error={error} onRetry={recarregar} />}
-      {loading && !data && <Skeleton height={96} />}
+        {error && <ErrorState error={error} onRetry={recarregar} />}
+        {loading && !data && <Skeleton height={96} />}
 
-      {data?.results.length === 0 && (
-        <EmptyState
-          title="Você ainda não criou nenhuma lista"
-          description="Agrupe filmes por tema, humor ou o que quiser."
-        />
-      )}
+        {data?.results.length === 0 && (
+          <EmptyState
+            icon={ListVideo}
+            title="Você ainda não criou nenhuma lista"
+            description="Agrupe filmes por tema, humor ou o que quiser e compartilhe com quem você segue."
+            action={
+              <Button variant="primary" onClick={() => setCriando(true)}>
+                Criar minha primeira lista
+              </Button>
+            }
+          />
+        )}
 
-      {data && data.results.length > 0 && (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.results.map((lista) => (
-            <li key={lista.id}>
-              <Link to={`/lista/${lista.id}`} className="block">
-                <Card className="flex h-full flex-col gap-2 hover:border-accent">
-                  {lista.cover_url && (
-                    <img
-                      src={lista.cover_url}
-                      alt=""
-                      className="aspect-video w-full rounded-md object-cover"
-                    />
-                  )}
-                  <span className="font-bold">{lista.name}</span>
-                  {lista.description && (
-                    <p className="line-clamp-2 text-sm text-muted">
-                      {lista.description}
-                    </p>
-                  )}
-                  <div>
-                    <Badge>{lista.is_public ? 'Pública' : 'Privada'}</Badge>
-                  </div>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+        {data && data.results.length > 0 && (
+          <ul className={GRADE}>
+            {data.results.map((lista) => (
+              <li key={lista.id}>
+                <ListaCard lista={lista} />
+              </li>
+            ))}
+          </ul>
+        )}
 
-      {data && (
-        <Paginacao
-          pagina={pagina}
-          temAnterior={Boolean(data.previous)}
-          temProxima={Boolean(data.next)}
-          onChange={setPagina}
-        />
-      )}
+        {data && (
+          <Paginacao
+            pagina={pagina}
+            temAnterior={Boolean(data.previous)}
+            temProxima={Boolean(data.next)}
+            onChange={setPagina}
+          />
+        )}
+      </section>
+
+      <ListasDaEquipe />
 
       {criando && (
         <PlaylistFormModal
