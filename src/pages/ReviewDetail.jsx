@@ -57,7 +57,11 @@ function EditarComentário({ review, onSaved, onCancel }) {
         Contém spoilers
       </label>
       <div className="flex gap-2">
-        <Button type="submit" variant="primary" disabled={salvando || !texto.trim()}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={salvando || !texto.trim()}
+        >
           {salvando ? 'Salvando…' : 'Salvar'}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
@@ -75,10 +79,13 @@ export default function ReviewDetail() {
   const [editando, setEditando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [falha, setFalha] = useState(null);
-  const { data: review, error, loading, recarregar, definir } = useAsync(
-    () => obterResenha(reviewId),
-    [reviewId],
-  );
+  const {
+    data: review,
+    error,
+    loading,
+    recarregar,
+    definir,
+  } = useAsync(() => obterResenha(reviewId), [reviewId]);
 
   if (error) return <ErrorState error={error} onRetry={recarregar} />;
   if (!review) return loading ? <Skeleton height={120} /> : null;
@@ -134,7 +141,11 @@ export default function ReviewDetail() {
           <Button size="sm" onClick={() => setEditando(true)}>
             Editar
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setConfirmando(true)}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmando(true)}
+          >
             Excluir
           </Button>
         </div>
