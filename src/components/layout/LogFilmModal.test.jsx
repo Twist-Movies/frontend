@@ -101,7 +101,9 @@ describe('LogFilmModal', () => {
     await userEvent.type(screen.getByLabelText('Buscar filme'), 'zzz');
     await userEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
-    expect(await screen.findByText('Nenhum filme encontrado.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Nenhum filme encontrado.'),
+    ).toBeInTheDocument();
   });
 
   it('mostra o erro e mantém o modal aberto', async () => {

@@ -28,16 +28,19 @@ describe('PosterGridSkeleton', () => {
   it('marca a grade como ocupada e usa a contagem padrão', () => {
     const { container } = render(<PosterGridSkeleton />);
 
-    expect(container.querySelector('[data-slot="poster-grid"]')).toHaveAttribute(
-      'aria-busy',
-      'true',
-    );
-    expect(container.querySelectorAll('[data-slot="poster-grid"] > div')).toHaveLength(12);
+    expect(
+      container.querySelector('[data-slot="poster-grid"]'),
+    ).toHaveAttribute('aria-busy', 'true');
+    expect(
+      container.querySelectorAll('[data-slot="poster-grid"] > div'),
+    ).toHaveLength(12);
   });
 
   it('respeita a contagem pedida', () => {
     const { container } = render(<PosterGridSkeleton count={3} />);
 
-    expect(container.querySelectorAll('[data-slot="poster-grid"] > div')).toHaveLength(3);
+    expect(
+      container.querySelectorAll('[data-slot="poster-grid"] > div'),
+    ).toHaveLength(3);
   });
 });

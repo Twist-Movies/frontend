@@ -6,7 +6,12 @@ import { Paginacao } from './Paginacao';
 describe('Paginacao', () => {
   it('não aparece quando há uma página só', () => {
     render(
-      <Paginacao pagina={1} temAnterior={false} temProxima={false} onChange={vi.fn()} />,
+      <Paginacao
+        pagina={1}
+        temAnterior={false}
+        temProxima={false}
+        onChange={vi.fn()}
+      />,
     );
 
     expect(screen.queryByRole('navigation')).toBeNull();
@@ -14,9 +19,7 @@ describe('Paginacao', () => {
 
   it('navega para a página anterior e a próxima', async () => {
     const onChange = vi.fn();
-    render(
-      <Paginacao pagina={2} temAnterior temProxima onChange={onChange} />,
-    );
+    render(<Paginacao pagina={2} temAnterior temProxima onChange={onChange} />);
 
     expect(screen.getByText('Página 2')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Anterior' }));
@@ -26,7 +29,12 @@ describe('Paginacao', () => {
 
   it('desabilita o botão sem página naquele sentido', () => {
     render(
-      <Paginacao pagina={1} temAnterior={false} temProxima onChange={vi.fn()} />,
+      <Paginacao
+        pagina={1}
+        temAnterior={false}
+        temProxima
+        onChange={vi.fn()}
+      />,
     );
 
     expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();

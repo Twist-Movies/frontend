@@ -3,7 +3,9 @@ import { anoDe, duracao, imagemTmdb, notaEm5 } from './tmdbImage';
 
 describe('imagemTmdb', () => {
   it('monta a URL a partir do caminho relativo', () => {
-    expect(imagemTmdb('/abc.jpg')).toBe('https://image.tmdb.org/t/p/w342/abc.jpg');
+    expect(imagemTmdb('/abc.jpg')).toBe(
+      'https://image.tmdb.org/t/p/w342/abc.jpg',
+    );
     expect(imagemTmdb('/abc.jpg', 'w1280')).toBe(
       'https://image.tmdb.org/t/p/w1280/abc.jpg',
     );

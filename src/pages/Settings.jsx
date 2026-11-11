@@ -292,10 +292,12 @@ function ExcluirConta({ username }) {
 }
 
 export default function Settings() {
-  const { data: perfil, error, loading, recarregar } = useAsync(
-    obterMeuPerfil,
-    [],
-  );
+  const {
+    data: perfil,
+    error,
+    loading,
+    recarregar,
+  } = useAsync(obterMeuPerfil, []);
 
   return (
     <div className="flex max-w-xl flex-col gap-8">

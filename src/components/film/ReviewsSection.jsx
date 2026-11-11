@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Button, EmptyState, ErrorState, Paginacao, SectionTitle, Textarea } from '../ui';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Paginacao,
+  SectionTitle,
+  Textarea,
+} from '../ui';
 import { FormAviso } from '../../auth/FormAviso';
 import { criarResenha, listarResenhas } from '../../api/reviews';
 import { useAsync } from '../../lib/useAsync';
@@ -72,7 +79,9 @@ export function ReviewsSection({ tmdbId }) {
   const trocar = (atualizada) =>
     definir({
       ...data,
-      results: data.results.map((r) => (r.id === atualizada.id ? atualizada : r)),
+      results: data.results.map((r) =>
+        r.id === atualizada.id ? atualizada : r,
+      ),
     });
 
   return (

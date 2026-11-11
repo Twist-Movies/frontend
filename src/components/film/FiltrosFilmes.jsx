@@ -11,7 +11,15 @@ import {
 const CONTROLE =
   'w-full rounded-lg border border-line bg-surface-2 px-3 py-2 min-h-9 text-fg focus:border-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
-function Seletor({ rotulo, valor, onChange, opcoes, vazio, desabilitado, dica }) {
+function Seletor({
+  rotulo,
+  valor,
+  onChange,
+  opcoes,
+  vazio,
+  desabilitado,
+  dica,
+}) {
   const id = useId();
 
   return (
@@ -45,7 +53,13 @@ const DICA = 'Disponível quando o back-end oferecer o catálogo de filmes.';
 
 // `catalogo` = false: sem rota de catálogo no back; gênero e duração ficam
 // indisponíveis e "popularidade" vira "relevância" (ordem do TMDB).
-export function FiltrosFilmes({ filtros, catalogo, podeLimpar, onChange, onLimpar }) {
+export function FiltrosFilmes({
+  filtros,
+  catalogo,
+  podeLimpar,
+  onChange,
+  onLimpar,
+}) {
   const ordenacoes = ORDENACOES.map(({ id, rotulo }) => ({
     valor: id,
     rotulo: id === 'popularidade' && !catalogo ? 'Relevância' : rotulo,

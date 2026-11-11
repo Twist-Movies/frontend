@@ -67,7 +67,10 @@ describe('ReviewItem', () => {
 
   it('esconde comentários com spoiler até o leitor pedir', async () => {
     renderWithRouter(
-      <ReviewItem review={{ ...REVIEW, contains_spoiler: true }} onChange={vi.fn()} />,
+      <ReviewItem
+        review={{ ...REVIEW, contains_spoiler: true }}
+        onChange={vi.fn()}
+      />,
     );
 
     expect(screen.queryByText('Muito bom')).toBeNull();
@@ -95,7 +98,10 @@ describe('ReviewItem', () => {
   it('descurte quando já estava curtida', async () => {
     const onChange = vi.fn();
     renderWithRouter(
-      <ReviewItem review={{ ...REVIEW, liked_by_me: true }} onChange={onChange} />,
+      <ReviewItem
+        review={{ ...REVIEW, liked_by_me: true }}
+        onChange={onChange}
+      />,
     );
 
     await userEvent.click(screen.getByRole('button', { name: /Curtida/ }));

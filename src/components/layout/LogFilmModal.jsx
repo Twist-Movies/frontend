@@ -6,7 +6,13 @@ import { avaliarFilme, buscarFilmes, marcarAssistido } from '../../api/movies';
 import { criarResenha } from '../../api/reviews';
 import { anoDe } from '../../lib/tmdbImage';
 
-const VAZIO = { termo: '', resultados: null, escolhido: null, nota: 0, texto: '' };
+const VAZIO = {
+  termo: '',
+  resultados: null,
+  escolhido: null,
+  nota: 0,
+  texto: '',
+};
 
 export function LogFilmModal({ open, onClose }) {
   const [estado, setEstado] = useState(VAZIO);

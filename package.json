@@ -16,10 +16,10 @@
     "e2e:integracao": "playwright test -c playwright.integracao.config.js"
   },
   "dependencies": {
+    "embla-carousel-react": "^8.6.0",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "embla-carousel-react": "^8.6.0",
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {

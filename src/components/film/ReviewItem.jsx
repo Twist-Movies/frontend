@@ -37,7 +37,10 @@ export function ReviewItem({ review, onChange }) {
     <Card>
       <article className="flex items-start gap-3">
         <Link {...perfil} tabIndex={-1} aria-hidden="true">
-          <Avatar name={review.author.username} src={review.author.avatar_url} />
+          <Avatar
+            name={review.author.username}
+            src={review.author.avatar_url}
+          />
         </Link>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-baseline gap-x-2 text-sm">

@@ -24,14 +24,14 @@ import Search from './pages/Search';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
-export function AppRoutes() {
-  return (
 // Links antigos (/resenha/:id) continuam funcionando.
 function RedirecionarComentario() {
   const { reviewId } = useParams();
   return <Navigate to={`/comentario/${reviewId}`} replace />;
 }
 
+export function AppRoutes() {
+  return (
     <Routes>
       <Route element={<RedirectIfAuthenticated />}>
         <Route element={<PublicShell />}>

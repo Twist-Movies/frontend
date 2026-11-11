@@ -19,7 +19,7 @@ beforeEach(() => {
   localStorage.clear();
   setAccessToken('acc');
   fetchMock = instalarFetch();
-  fetchMock.mockResolvedValue(json(200, {}));
+  fetchMock.mockImplementation(async () => json(200, {}));
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -57,7 +57,11 @@ describe('api/users', () => {
 
   it('edita o perfil em multipart quando há avatar', async () => {
     const avatar = new File(['x'], 'a.png', { type: 'image/png' });
-    await editarMeuPerfil({ username: 'davi', birthDate: '2000-01-02', avatar });
+    await editarMeuPerfil({
+      username: 'davi',
+      birthDate: '2000-01-02',
+      avatar,
+    });
 
     const { opcoes } = ultimaChamada(fetchMock);
     expect(opcoes.body).toBeInstanceOf(FormData);

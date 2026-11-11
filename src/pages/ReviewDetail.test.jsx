@@ -92,7 +92,9 @@ describe('ReviewDetail', () => {
     await screen.findByText('Gostei muito');
 
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(screen.getAllByRole('button', { name: 'Excluir' })[1]);
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Excluir' })[1],
+    );
 
     expect(await screen.findByText('página do filme')).toBeInTheDocument();
     expect(excluirResenha).toHaveBeenCalledWith(5);

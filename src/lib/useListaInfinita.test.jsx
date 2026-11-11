@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useListaInfinita } from './useListaInfinita';
 
 const pagina = (n, total = 3) => ({
