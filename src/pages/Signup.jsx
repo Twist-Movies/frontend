@@ -4,6 +4,7 @@ import { Button, Field, Input } from '../components/ui';
 import { FormAviso } from '../auth/FormAviso';
 import { avaliarSenha } from '../auth/forcaSenha';
 import { useAuth } from '../auth';
+import { aplicarMascaraData, dataParaIso } from '../lib/dataNascimento';
 import { AuthLayout, FORM } from '../auth/AuthLayout';
 import {
   AVATAR_MAX_MB,
@@ -54,7 +55,7 @@ export default function Signup() {
 
     setEnviando(true);
     try {
-      await signUp(dados);
+      await signUp({ ...dados, birthDate: dataParaIso(dados.birthDate) });
       navigate('/', { replace: true });
     } catch (erro) {
       const porCampo = errosDaApiNoFormulario(erro.fieldErrors ?? {});
@@ -100,8 +101,12 @@ export default function Signup() {
         {texto('username', 'Nome de usuário', { autoComplete: 'username' })}
         {texto('email', 'E-mail', { type: 'email', autoComplete: 'email' })}
         {texto('birthDate', 'Data de nascimento', {
-          type: 'date',
+          inputMode: 'numeric',
+          placeholder: 'dd/mm/aaaa',
+          maxLength: 10,
           autoComplete: 'bday',
+          onChange: (e) =>
+            alterar('birthDate', aplicarMascaraData(e.target.value)),
         })}
         {texto('password', 'Senha', {
           type: 'password',

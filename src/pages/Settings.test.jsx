@@ -60,7 +60,9 @@ describe('Settings', () => {
     expect(screen.getByLabelText('Sobrenome')).toHaveValue('Almeida');
     expect(screen.getByLabelText('Nome de usuário')).toHaveValue('davi');
     expect(screen.getByLabelText('E-mail')).toHaveValue('davi@twist.app');
-    expect(screen.getByLabelText('Data de nascimento')).toHaveValue('2000-05-10');
+    expect(screen.getByLabelText('Data de nascimento')).toHaveValue(
+      '10/05/2000',
+    );
     expect(screen.getByLabelText('Bio')).toHaveValue('Cinéfilo');
   });
 
@@ -80,6 +82,31 @@ describe('Settings', () => {
       expect.objectContaining({ firstName: 'David', username: 'davi' }),
     );
     expect(screen.getByTestId('sessao')).toHaveTextContent('autenticado:David Almeida');
+  });
+
+  it('envia a data de nascimento em ISO e valida a máscara', async () => {
+    editarMeuPerfil.mockResolvedValue(PERFIL);
+    renderizar();
+
+    const data = await screen.findByLabelText('Data de nascimento');
+    await userEvent.clear(data);
+    await userEvent.type(data, '31022000');
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    );
+    expect(await screen.findByText(/data válida/)).toBeInTheDocument();
+    expect(editarMeuPerfil).not.toHaveBeenCalled();
+
+    await userEvent.clear(data);
+    await userEvent.type(data, '15062000');
+    expect(data).toHaveValue('15/06/2000');
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    );
+    await screen.findByText('Perfil atualizado.');
+    expect(editarMeuPerfil).toHaveBeenCalledWith(
+      expect.objectContaining({ birthDate: '2000-06-15' }),
+    );
   });
 
   it('exige usuário e e-mail', async () => {

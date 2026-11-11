@@ -27,7 +27,7 @@ const VALIDO = {
   lastName: 'Almeida',
   username: 'davi.almeida',
   email: 'davi@twist.app',
-  birthDate: '1999-05-10',
+  birthDate: '10/05/1999',
   password: 'senhaforte1',
   avatar: null,
 };
@@ -80,8 +80,17 @@ describe('validarCadastro', () => {
 
   it('recusa data de nascimento no futuro', () => {
     expect(
-      validarCadastro({ ...VALIDO, birthDate: '2999-01-01' }).birthDate,
+      validarCadastro({ ...VALIDO, birthDate: '01/01/2999' }).birthDate,
     ).toBe('A data de nascimento não pode ser no futuro.');
+  });
+
+  it('recusa data de nascimento incompleta ou inexistente', () => {
+    expect(
+      validarCadastro({ ...VALIDO, birthDate: '10/05' }).birthDate,
+    ).toMatch(/dd\/mm\/aaaa/);
+    expect(
+      validarCadastro({ ...VALIDO, birthDate: '31/02/2000' }).birthDate,
+    ).toMatch(/válida/);
   });
 
   it('espelha as regras de senha do Django', () => {

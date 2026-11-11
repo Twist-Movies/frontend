@@ -1,3 +1,5 @@
+import { validarDataNascimento } from '../lib/dataNascimento';
+
 const EMAIL = /^\S+@\S+\.\S+$/;
 const USERNAME = /^[\w.@+-]+$/;
 
@@ -39,12 +41,6 @@ export function validarRedefinicao({ password, confirmacao }) {
   return erros;
 }
 
-function hoje() {
-  const agora = new Date();
-  const local = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-}
-
 export function validarCadastro(dados) {
   const erros = {};
 
@@ -60,9 +56,12 @@ export function validarCadastro(dados) {
   const erroEmail = validarEmail(dados.email);
   if (erroEmail) erros.email = erroEmail;
 
+  // birthDate chega no formato dd/mm/aaaa (o da máscara do formulário).
   if (!dados.birthDate) erros.birthDate = 'Informe sua data de nascimento.';
-  else if (dados.birthDate > hoje())
-    erros.birthDate = 'A data de nascimento não pode ser no futuro.';
+  else {
+    const erroData = validarDataNascimento(dados.birthDate);
+    if (erroData) erros.birthDate = erroData;
+  }
 
   const erroSenha = validarSenha(dados.password, 'Escolha uma senha.');
   if (erroSenha) erros.password = erroSenha;

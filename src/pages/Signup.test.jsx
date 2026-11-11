@@ -33,12 +33,33 @@ async function preencherValido(
   await userEvent.type(campo('Sobrenome'), 'Souza');
   await userEvent.type(campo('Nome de usuário'), `bia_${sufixo}`);
   await userEvent.type(campo('E-mail'), `bia_${sufixo}@twist.app`);
-  await userEvent.type(campo('Data de nascimento'), '2001-02-03');
+  await userEvent.type(campo('Data de nascimento'), '03022001');
   await userEvent.type(campo('Senha'), 'senhaforte1');
 }
 
 describe('Signup', () => {
   beforeEach(() => localStorage.clear());
+
+  it('aplica a máscara dd/mm/aaaa enquanto digita', async () => {
+    montar();
+
+    await userEvent.type(campo('Data de nascimento'), '03022001');
+
+    expect(campo('Data de nascimento')).toHaveValue('03/02/2001');
+    expect(campo('Data de nascimento')).toHaveAttribute('inputmode', 'numeric');
+  });
+
+  it('recusa data inexistente', async () => {
+    montar();
+    await aceitarTermos();
+    await preencherValido();
+    await userEvent.clear(campo('Data de nascimento'));
+    await userEvent.type(campo('Data de nascimento'), '31022001');
+
+    await userEvent.click(botao());
+
+    expect(screen.getByText(/data válida/)).toBeInTheDocument();
+  });
 
   it('só libera o envio depois do aceite dos termos', async () => {
     montar();

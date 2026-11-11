@@ -19,12 +19,22 @@ import {
   errosDaApiNoFormulario,
 } from '../auth/validacao';
 import { editarMeuPerfil, excluirMinhaConta, obterMeuPerfil } from '../api/users';
+import {
+  aplicarMascaraData,
+  dataParaIso,
+  isoParaData,
+  validarDataNascimento,
+} from '../lib/dataNascimento';
 import { useAsync } from '../lib/useAsync';
 
 function validar(dados) {
   const erros = {};
   if (!dados.username.trim()) erros.username = 'Escolha um nome de usuário.';
   if (!dados.email.trim()) erros.email = 'Informe seu e-mail.';
+  if (dados.birthDate) {
+    const erroData = validarDataNascimento(dados.birthDate);
+    if (erroData) erros.birthDate = erroData;
+  }
   if (dados.avatar && !AVATAR_TIPOS.includes(dados.avatar.type))
     erros.avatar = 'Formato não suportado. Use JPEG, PNG ou WebP.';
   else if (dados.avatar && dados.avatar.size > AVATAR_MAX_MB * 1024 * 1024)
@@ -39,7 +49,7 @@ function FormPerfil({ perfil }) {
     lastName: perfil.last_name ?? '',
     username: perfil.username,
     email: perfil.email,
-    birthDate: perfil.birth_date ?? '',
+    birthDate: isoParaData(perfil.birth_date),
     bio: perfil.bio ?? '',
     avatar: null,
   });
@@ -67,6 +77,7 @@ function FormPerfil({ perfil }) {
     try {
       const atualizado = await editarMeuPerfil({
         ...dados,
+        birthDate: dataParaIso(dados.birthDate),
         username: dados.username.trim(),
         email: dados.email.trim(),
       });
@@ -111,7 +122,13 @@ function FormPerfil({ perfil }) {
       </div>
       {texto('username', 'Nome de usuário')}
       {texto('email', 'E-mail', { type: 'email' })}
-      {texto('birthDate', 'Data de nascimento', { type: 'date' })}
+      {texto('birthDate', 'Data de nascimento', {
+        inputMode: 'numeric',
+        placeholder: 'dd/mm/aaaa',
+        maxLength: 10,
+        onChange: (e) =>
+          alterar('birthDate', aplicarMascaraData(e.target.value)),
+      })}
 
       <Field label="Bio" error={erros.bio}>
         {(id) => (
