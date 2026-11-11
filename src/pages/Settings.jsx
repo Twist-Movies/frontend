@@ -18,7 +18,11 @@ import {
   AVATAR_TIPOS,
   errosDaApiNoFormulario,
 } from '../auth/validacao';
-import { editarMeuPerfil, excluirMinhaConta, obterMeuPerfil } from '../api/users';
+import {
+  editarMeuPerfil,
+  excluirMinhaConta,
+  obterMeuPerfil,
+} from '../api/users';
 import {
   aplicarMascaraData,
   dataParaIso,
@@ -43,7 +47,7 @@ function validar(dados) {
 }
 
 function FormPerfil({ perfil }) {
-  const { updateSession } = useAuth();
+  const { updateSession, signOut } = useAuth();
   const [dados, setDados] = useState({
     firstName: perfil.first_name ?? '',
     lastName: perfil.last_name ?? '',
@@ -52,7 +56,10 @@ function FormPerfil({ perfil }) {
     birthDate: isoParaData(perfil.birth_date),
     bio: perfil.bio ?? '',
     avatar: null,
+    currentPassword: '',
   });
+  const emailMudou =
+    dados.email.trim().toLowerCase() !== perfil.email.trim().toLowerCase();
   const [erros, setErros] = useState({});
   const [falha, setFalha] = useState(null);
   const [salvo, setSalvo] = useState(false);
@@ -70,6 +77,10 @@ function FormPerfil({ perfil }) {
     setSalvo(false);
 
     const encontrados = validar(dados);
+    if (emailMudou && !dados.currentPassword) {
+      encontrados.currentPassword =
+        'Informe sua senha atual para trocar o e-mail.';
+    }
     setErros(encontrados);
     if (Object.keys(encontrados).length > 0) return;
 
@@ -80,7 +91,17 @@ function FormPerfil({ perfil }) {
         birthDate: dataParaIso(dados.birthDate),
         username: dados.username.trim(),
         email: dados.email.trim(),
+        currentPassword: emailMudou ? dados.currentPassword : undefined,
       });
+      if (emailMudou) {
+        // O back revoga todas as sessões e apaga o cookie: fim de sessão.
+        // O RequireAuth leva ao /entrar levando o aviso.
+        await signOut({
+          remoto: false,
+          aviso: 'E-mail alterado. Entre novamente.',
+        });
+        return;
+      }
       updateSession(sessaoDoPerfil(atualizado));
       setDados((d) => ({ ...d, avatar: null }));
       setSalvo(true);
@@ -122,6 +143,24 @@ function FormPerfil({ perfil }) {
       </div>
       {texto('username', 'Nome de usuário')}
       {texto('email', 'E-mail', { type: 'email' })}
+      {emailMudou && (
+        <Field
+          label="Senha atual"
+          hint="Necessária para trocar o e-mail. Você precisará entrar de novo."
+          error={erros.currentPassword}
+        >
+          {(id) => (
+            <Input
+              id={id}
+              type="password"
+              autoComplete="current-password"
+              value={dados.currentPassword}
+              invalid={Boolean(erros.currentPassword)}
+              onChange={(e) => alterar('currentPassword', e.target.value)}
+            />
+          )}
+        </Field>
+      )}
       {texto('birthDate', 'Data de nascimento', {
         inputMode: 'numeric',
         placeholder: 'dd/mm/aaaa',
@@ -170,6 +209,9 @@ function ExcluirConta({ username }) {
   const { signOut } = useAuth();
   const [aberto, setAberto] = useState(false);
   const [confirmacao, setConfirmacao] = useState('');
+  const [senha, setSenha] = useState('');
+  const confirmado =
+    confirmacao.trim().toLowerCase() === username.toLowerCase() && senha !== '';
   const [falha, setFalha] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -177,8 +219,8 @@ function ExcluirConta({ username }) {
     setEnviando(true);
     setFalha(null);
     try {
-      await excluirMinhaConta(confirmacao);
-      await signOut();
+      await excluirMinhaConta({ username, password: senha });
+      await signOut({ remoto: false });
     } catch (erro) {
       setFalha(erro);
       setEnviando(false);
@@ -208,7 +250,7 @@ function ExcluirConta({ username }) {
             </Button>
             <Button
               variant="primary"
-              disabled={enviando || confirmacao !== username}
+              disabled={enviando || !confirmado}
               onClick={excluir}
             >
               Excluir definitivamente
@@ -218,12 +260,28 @@ function ExcluirConta({ username }) {
       >
         <div className="flex flex-col gap-3">
           <FormAviso erro={falha} />
-          <Field label={`Digite ${username} para confirmar`}>
+          <Field
+            label="Confirme seu nome de usuário"
+            hint={`Digite seu nome de usuário (${username}); maiúsculas e minúsculas não importam.`}
+          >
             {(id) => (
               <Input
                 id={id}
                 value={confirmacao}
+                autoComplete="off"
                 onChange={(e) => setConfirmacao(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Senha atual" error={falha?.fieldErrors?.password}>
+            {(id) => (
+              <Input
+                id={id}
+                type="password"
+                autoComplete="current-password"
+                value={senha}
+                invalid={Boolean(falha?.fieldErrors?.password)}
+                onChange={(e) => setSenha(e.target.value)}
               />
             )}
           </Field>

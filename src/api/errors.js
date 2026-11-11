@@ -57,6 +57,10 @@ export function erroDaResposta(status, dados) {
     const msg = typeof dados?.detail === 'string' ? dados.detail : '';
     return new ApiError(status, traduzir(msg || 'Request was throttled.'));
   }
+  // 503 (ex.: TMDB fora do ar) traz uma mensagem própria e segura em `error`.
+  if (status === 503 && typeof dados?.error === 'string') {
+    return new ApiError(status, dados.error);
+  }
   if (status >= 500 || !dados || typeof dados !== 'object') {
     return new ApiError(status, GENERICA);
   }

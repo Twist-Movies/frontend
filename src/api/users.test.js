@@ -63,12 +63,31 @@ describe('api/users', () => {
     expect(opcoes.body.get('avatar')).toBeInstanceOf(File);
   });
 
-  it('exclui a conta confirmando o username', async () => {
-    await excluirMinhaConta('davi');
+  it('envia current_password só quando informada', async () => {
+    await editarMeuPerfil({
+      username: 'd',
+      email: 'n@x.com',
+      currentPassword: 'p1',
+    });
+    expect(
+      JSON.parse(ultimaChamada(fetchMock).opcoes.body).current_password,
+    ).toBe('p1');
+
+    await editarMeuPerfil({ username: 'd', email: 'n@x.com' });
+    expect(JSON.parse(ultimaChamada(fetchMock).opcoes.body)).not.toHaveProperty(
+      'current_password',
+    );
+  });
+
+  it('exclui a conta com username e senha', async () => {
+    await excluirMinhaConta({ username: 'davi', password: 'x1' });
 
     const { opcoes } = ultimaChamada(fetchMock);
     expect(opcoes.method).toBe('DELETE');
-    expect(JSON.parse(opcoes.body)).toEqual({ username: 'davi' });
+    expect(JSON.parse(opcoes.body)).toEqual({
+      username: 'davi',
+      password: 'x1',
+    });
   });
 
   it('segue e deixa de seguir', async () => {

@@ -14,15 +14,17 @@ export function editarMeuPerfil(dados) {
         last_name: dados.lastName,
         birth_date: dados.birthDate === '' ? null : dados.birthDate,
         bio: dados.bio,
+        // Só vai quando o e-mail muda (o back exige a senha atual nesse caso).
+        current_password: dados.currentPassword || undefined,
       },
       { avatar: dados.avatar },
     ),
   });
 }
 
-// O back exige o username como confirmação.
-export const excluirMinhaConta = (username) =>
-  request('/users/me/', { method: 'DELETE', body: { username } });
+// O back exige username (confirmação) e a senha atual.
+export const excluirMinhaConta = ({ username, password }) =>
+  request('/users/me/', { method: 'DELETE', body: { username, password } });
 
 export const seguirUsuario = (id) =>
   request(`/users/${id}/follow/`, { method: 'POST' });

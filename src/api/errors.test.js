@@ -20,6 +20,15 @@ describe('erroDaResposta', () => {
     expect(erro.message).toMatch(/tente novamente/i);
   });
 
+  it('mostra a mensagem {error} dos 503/404 do TMDB', () => {
+    expect(
+      erroDaResposta(503, { error: 'Serviço de filmes indisponível.' }).message,
+    ).toBe('Serviço de filmes indisponível.');
+    expect(
+      erroDaResposta(404, { error: 'Filme não encontrado.' }).message,
+    ).toBe('Filme não encontrado.');
+  });
+
   it('lê o formato { error } do login', () => {
     const erro = erroDaResposta(401, { error: 'Invalid credentials' });
     expect(erro.message).toBe('E-mail, usuário ou senha incorretos.');
