@@ -8,8 +8,18 @@ vi.mock('../api/users', () => ({
   listarSeguidores: vi.fn(),
 }));
 
-const p = (id, username) => ({ id, username, first_name: '', last_name: '', avatar_url: null });
-const pagina = (...pessoas) => ({ count: pessoas.length, results: pessoas, next: null });
+const p = (id, username) => ({
+  id,
+  username,
+  first_name: '',
+  last_name: '',
+  avatar_url: null,
+});
+const pagina = (...pessoas) => ({
+  count: pessoas.length,
+  results: pessoas,
+  next: null,
+});
 const ANA = p(5, 'ana');
 const BIA = p(6, 'bia');
 

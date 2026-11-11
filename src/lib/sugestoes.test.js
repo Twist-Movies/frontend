@@ -4,7 +4,13 @@ import { sugerirMembros } from './sugestoes';
 
 vi.mock('../api/users', () => ({ listarSeguindo: vi.fn() }));
 
-const p = (id, username) => ({ id, username, first_name: '', last_name: '', avatar_url: null });
+const p = (id, username) => ({
+  id,
+  username,
+  first_name: '',
+  last_name: '',
+  avatar_url: null,
+});
 const pagina = (...pessoas) => ({ results: pessoas, next: null });
 
 beforeEach(() => vi.clearAllMocks());
@@ -18,7 +24,11 @@ describe('sugerirMembros', () => {
         : pagina(p(10, 'caio')),
     );
 
-    const sugestoes = await sugerirMembros({ meuId: 1, seguindo, seguidores: [] });
+    const sugestoes = await sugerirMembros({
+      meuId: 1,
+      seguindo,
+      seguidores: [],
+    });
 
     expect(sugestoes).toEqual([
       { pessoa: p(10, 'caio'), comuns: 2 },

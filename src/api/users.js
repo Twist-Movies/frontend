@@ -35,3 +35,12 @@ export const listarSeguidores = (id, page = 1) =>
   request(`/users/${id}/followers/?page=${page}`, { auth: false });
 export const listarSeguindo = (id, page = 1) =>
   request(`/users/${id}/following/?page=${page}`, { auth: false });
+
+// Busca de pessoas por username (rota pública e paginada).
+export const buscarUsuarios = (q, page = 1) =>
+  request(`/users/search/?q=${encodeURIComponent(q)}&page=${page}`, {
+    auth: false,
+  });
+
+export const listarResenhasDoUsuario = (id, page = 1) =>
+  request(`/users/${id}/reviews/?page=${page}`, { auth: false });

@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
 import { setAccessToken } from './tokens';
 import {
+  buscarUsuarios,
   deixarDeSeguir,
   editarMeuPerfil,
   excluirMinhaConta,
+  listarResenhasDoUsuario,
   listarSeguidores,
   listarSeguindo,
   obterMeuPerfil,
@@ -109,5 +111,21 @@ describe('api/users', () => {
     await listarSeguindo(5);
     ({ url } = ultimaChamada(fetchMock));
     expect(url).toBe('/api/users/5/following/?page=1');
+  });
+});
+
+describe('api/users busca e comentários', () => {
+  it('busca pessoas codificando o termo, sem token', async () => {
+    await buscarUsuarios('da vi&', 2);
+
+    const { url, opcoes } = ultimaChamada(fetchMock);
+    expect(url).toBe('/api/users/search/?q=da%20vi%26&page=2');
+    expect(opcoes.headers?.Authorization).toBeUndefined();
+  });
+
+  it('lista os comentários de um usuário', async () => {
+    await listarResenhasDoUsuario(5);
+
+    expect(ultimaChamada(fetchMock).url).toBe('/api/users/5/reviews/?page=1');
   });
 });

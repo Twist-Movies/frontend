@@ -14,7 +14,10 @@ export function PessoaCard({ pessoa, seguindo, ocupado, onAlternar, detalhe }) {
         <Avatar name={pessoa.username} src={pessoa.avatar_url} />
       </Link>
       <div className="min-w-0 flex-1">
-        <Link {...perfil} className="block truncate font-semibold hover:text-accent">
+        <Link
+          {...perfil}
+          className="block truncate font-semibold hover:text-accent"
+        >
           {nome}
         </Link>
         <p className="truncate text-sm text-faint">@{pessoa.username}</p>

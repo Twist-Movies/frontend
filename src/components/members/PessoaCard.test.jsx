@@ -52,7 +52,9 @@ describe('PessoaCard', () => {
 
   it('oferece seguir e avisa quem foi clicado', async () => {
     const onAlternar = vi.fn();
-    renderWithRouter(<PessoaCard pessoa={PESSOA} seguindo={false} onAlternar={onAlternar} />);
+    renderWithRouter(
+      <PessoaCard pessoa={PESSOA} seguindo={false} onAlternar={onAlternar} />,
+    );
 
     await userEvent.click(screen.getByRole('button', { name: 'Seguir ana' }));
 
@@ -60,7 +62,9 @@ describe('PessoaCard', () => {
   });
 
   it('oferece deixar de seguir quando já segue', () => {
-    renderWithRouter(<PessoaCard pessoa={PESSOA} seguindo onAlternar={vi.fn()} />);
+    renderWithRouter(
+      <PessoaCard pessoa={PESSOA} seguindo onAlternar={vi.fn()} />,
+    );
 
     expect(
       screen.getByRole('button', { name: 'Deixar de seguir ana' }),
@@ -68,7 +72,14 @@ describe('PessoaCard', () => {
   });
 
   it('desabilita o botão enquanto a ação está em andamento', () => {
-    renderWithRouter(<PessoaCard pessoa={PESSOA} seguindo={false} ocupado onAlternar={vi.fn()} />);
+    renderWithRouter(
+      <PessoaCard
+        pessoa={PESSOA}
+        seguindo={false}
+        ocupado
+        onAlternar={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('button', { name: 'Seguir ana' })).toBeDisabled();
   });
