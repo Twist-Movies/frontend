@@ -94,6 +94,21 @@ describe('TopBar', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/');
   });
 
+  it('mostra um atalho de busca para o mobile e esconde o nav abaixo de md', () => {
+    renderTopBar();
+
+    expect(
+      screen.getByRole('link', { name: 'Ir para a busca' }),
+    ).toHaveAttribute('href', '/busca');
+    expect(screen.getByRole('link', { name: 'Ir para a busca' })).toHaveClass(
+      'md:hidden',
+    );
+    expect(
+      screen.getByRole('navigation', { name: 'Navegação principal' }),
+    ).toHaveClass('hidden', 'md:flex');
+    expect(screen.getByRole('searchbox').placeholder).toBe('Buscar filmes…');
+  });
+
   it('aciona o registro de filme', async () => {
     const { onLogFilm } = renderTopBar();
 

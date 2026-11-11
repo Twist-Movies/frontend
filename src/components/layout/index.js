@@ -6,3 +6,4 @@ export { UserMenu } from './UserMenu';
 export { Logo } from './Logo';
 export { PublicHeader } from './PublicHeader';
 export { SearchForm } from './SearchForm';
+export { BottomNav } from './BottomNav';

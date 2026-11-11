@@ -52,7 +52,7 @@ export function UserMenu({ username, avatarUrl, onSignOut }) {
           >
             Meu perfil
           </Link>
-          
+
           {/* <Link
             className={ITEM}
             role="menuitem"
@@ -69,7 +69,7 @@ export function UserMenu({ username, avatarUrl, onSignOut }) {
           >
             Watchlist
           </Link> */}
-          
+
           <Link
             className={ITEM}
             role="menuitem"

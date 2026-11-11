@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { cx } from '../../lib/cx';
 
-export function SearchForm({ placeholder = 'Pesquisar...', className = '' }) {
+export function SearchForm({ placeholder = 'Buscar filmes…', className = '' }) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -18,7 +18,7 @@ export function SearchForm({ placeholder = 'Pesquisar...', className = '' }) {
       role="search"
       onSubmit={submitSearch}
       className={cx(
-        'items-center rounded-full border border-fg/40 bg-black/25 py-1 pr-2 pl-4 backdrop-blur-md',
+        'items-center gap-2 rounded-full border border-fg/40 bg-black/25 py-1.5 pr-3 pl-4 backdrop-blur-md',
         className,
       )}
     >
@@ -28,7 +28,7 @@ export function SearchForm({ placeholder = 'Pesquisar...', className = '' }) {
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="w-24 bg-transparent text-fg outline-none placeholder:text-fg/70 lg:w-40"
+        className="w-36 min-w-0 bg-transparent text-fg outline-none placeholder:text-fg/70 lg:w-56"
       />
       <button
         type="submit"

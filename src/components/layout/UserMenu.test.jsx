@@ -29,10 +29,9 @@ describe('UserMenu', () => {
     expect(
       screen.getByRole('menuitem', { name: 'Meu perfil' }),
     ).toHaveAttribute('href', '/u/davi');
-    expect(screen.getByRole('menuitem', { name: 'Diário' })).toHaveAttribute(
-      'href',
-      '/u/davi/diario',
-    );
+    expect(
+      screen.getByRole('menuitem', { name: 'Minhas listas' }),
+    ).toHaveAttribute('href', '/listas');
   });
 
   it('fecha com Escape', async () => {

@@ -22,7 +22,10 @@ const PAGINA_1 = {
   page: 1,
   total_pages: 2,
   total_results: 4,
-  results: [filme(1, 'Matrix', '1999-03-30', 8.2), filme(2, 'Alien', '1979-05-25', 8.4)],
+  results: [
+    filme(1, 'Matrix', '1999-03-30', 8.2),
+    filme(2, 'Alien', '1979-05-25', 8.4),
+  ],
 };
 const PAGINA_2 = {
   page: 2,
@@ -37,9 +40,84 @@ function renderizar(route = '/filmes') {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   descobrirFilmes.mockImplementation(async ({ page }) =>
     page === 2 ? PAGINA_2 : PAGINA_1,
   );
+});
+
+describe('Films (modo grade/lista)', () => {
+  it('alterna para a lista com sinopse e guarda a preferência', async () => {
+    descobrirFilmes.mockResolvedValue({
+      page: 1,
+      total_pages: 1,
+      results: [
+        { ...filme(1, 'Matrix', '1999-03-30', 8.2), overview: 'Neo acorda.' },
+      ],
+    });
+    renderizar();
+    await screen.findByRole('link', { name: 'Matrix (1999)' });
+    expect(screen.queryByText('Neo acorda.')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver em lista' }));
+
+    expect(screen.getByText('Neo acorda.')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Ver em lista' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(localStorage.getItem('twist:filmes:visao')).toBe('lista');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver em grade' }));
+    expect(screen.queryByText('Neo acorda.')).toBeNull();
+    expect(localStorage.getItem('twist:filmes:visao')).toBe('grade');
+  });
+
+  it('abre direto no modo salvo', async () => {
+    localStorage.setItem('twist:filmes:visao', 'lista');
+    renderizar();
+
+    await screen.findByRole('link', { name: 'Matrix (1999)' });
+    expect(
+      screen.getByRole('button', { name: 'Ver em lista' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('funciona mesmo sem acesso ao localStorage', async () => {
+    const getItem = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('bloqueado');
+      });
+    const setItem = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('bloqueado');
+      });
+    renderizar();
+    await screen.findByRole('link', { name: 'Matrix (1999)' });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver em lista' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Ver em lista' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    getItem.mockRestore();
+    setItem.mockRestore();
+  });
+
+  it('recolhe os filtros no mobile atrás do botão Filtros', async () => {
+    renderizar();
+    await screen.findByRole('link', { name: 'Matrix (1999)' });
+
+    const botao = screen.getByRole('button', { name: 'Filtros' });
+    const painel = document.getElementById('filtros-filmes');
+    expect(painel).toHaveClass('hidden', 'md:block');
+
+    await userEvent.click(botao);
+
+    expect(botao).toHaveAttribute('aria-expanded', 'true');
+    expect(painel).toHaveClass('block');
+  });
 });
 
 describe('Films (com catálogo)', () => {
@@ -58,10 +136,16 @@ describe('Films (com catálogo)', () => {
     renderizar();
     await screen.findByRole('link', { name: 'Matrix (1999)' });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Carregar mais' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Carregar mais' }),
+    );
 
-    expect(await screen.findByRole('link', { name: 'Heat (1995)' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Matrix (1999)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Heat (1995)' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Matrix (1999)' }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Carregar mais' })).toBeNull();
   });
 
@@ -97,7 +181,9 @@ describe('Films (com catálogo)', () => {
     renderizar('/filmes?genero=18&nota=8');
     await screen.findByRole('link', { name: 'Matrix (1999)' });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Limpar filtros' }),
+    );
 
     await screen.findByRole('link', { name: 'Matrix (1999)' });
     expect(screen.getByLabelText('Gênero')).toHaveValue('');
@@ -108,15 +194,23 @@ describe('Films (com catálogo)', () => {
     descobrirFilmes.mockResolvedValue({ page: 1, total_pages: 0, results: [] });
     renderizar('/filmes?genero=99');
 
-    expect(await screen.findByText('Nenhum filme encontrado')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Nenhum filme encontrado'),
+    ).toBeInTheDocument();
   });
 
   it('mostra o erro da API e permite tentar de novo', async () => {
-    descobrirFilmes.mockRejectedValueOnce(new ApiError(503, 'TMDB indisponível.'));
+    descobrirFilmes.mockRejectedValueOnce(
+      new ApiError(503, 'TMDB indisponível.'),
+    );
     renderizar();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('TMDB indisponível.');
-    await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'TMDB indisponível.',
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Tentar novamente' }),
+    );
 
     expect(
       await screen.findByRole('link', { name: 'Matrix (1999)' }),
@@ -132,10 +226,14 @@ describe('Films (com catálogo)', () => {
     renderizar();
     await screen.findByRole('link', { name: 'Matrix (1999)' });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Carregar mais' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Carregar mais' }),
+    );
 
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Carregar mais' })).toBeNull(),
+      expect(
+        screen.queryByRole('button', { name: 'Carregar mais' }),
+      ).toBeNull(),
     );
     const grade = screen.getByLabelText('Filmes');
     expect(within(grade).getAllByRole('link')).toHaveLength(2);
@@ -162,7 +260,9 @@ describe('Films (sem catálogo no back)', () => {
     renderizar();
 
     expect(await screen.findByText('Pesquise um título')).toBeInTheDocument();
-    expect(screen.getByText(/depende de uma rota do back-end/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/depende de uma rota do back-end/),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Gênero')).toBeDisabled();
     expect(screen.getByLabelText('Duração')).toBeDisabled();
     expect(screen.getByLabelText('Década')).toBeEnabled();
@@ -182,7 +282,9 @@ describe('Films (sem catálogo no back)', () => {
     await userEvent.type(screen.getByLabelText('Título do filme'), 'filme');
     await userEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
-    expect(await screen.findByRole('link', { name: 'Antigo (1995)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Antigo (1995)' }),
+    ).toBeInTheDocument();
     expect(buscarFilmes).toHaveBeenCalledWith({ q: 'filme', page: 1 });
   });
 
@@ -191,7 +293,10 @@ describe('Films (sem catálogo no back)', () => {
     await screen.findByRole('link', { name: 'Antigo (1995)' });
 
     await userEvent.selectOptions(screen.getByLabelText('Década'), '1990s');
-    await userEvent.selectOptions(screen.getByLabelText('Ordenar por'), 'Nota média');
+    await userEvent.selectOptions(
+      screen.getByLabelText('Ordenar por'),
+      'Nota média',
+    );
 
     const nomes = within(screen.getByLabelText('Filmes'))
       .getAllByRole('link')
@@ -203,13 +308,17 @@ describe('Films (sem catálogo no back)', () => {
   it('filtra pela nota mínima', async () => {
     renderizar('/filmes?q=filme&nota=8');
 
-    expect(await screen.findByRole('link', { name: 'Recente (2012)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Recente (2012)' }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Antigo (1995)' })).toBeNull();
   });
 
   it('mostra o estado vazio quando os filtros eliminam tudo', async () => {
     renderizar('/filmes?q=filme&decada=1960');
 
-    expect(await screen.findByText('Nenhum filme encontrado')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Nenhum filme encontrado'),
+    ).toBeInTheDocument();
   });
 });

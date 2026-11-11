@@ -28,10 +28,12 @@ export default function ListDetail() {
   const [editando, setEditando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [falha, setFalha] = useState(null);
-  const { data: lista, error, loading, recarregar } = useAsync(
-    () => obterPlaylist(listId),
-    [listId],
-  );
+  const {
+    data: lista,
+    error,
+    loading,
+    recarregar,
+  } = useAsync(() => obterPlaylist(listId), [listId]);
 
   if (error) return <ErrorState error={error} onRetry={recarregar} />;
   if (!lista) return loading ? <Skeleton height={120} /> : null;
@@ -73,13 +75,19 @@ export default function ListDetail() {
           </Link>{' '}
           · {lista.movies_count} filmes
         </p>
-        {lista.description && <p className="max-w-prose">{lista.description}</p>}
+        {lista.description && (
+          <p className="max-w-prose">{lista.description}</p>
+        )}
         {dono && (
           <div className="flex gap-2">
             <Button size="sm" onClick={() => setEditando(true)}>
               Editar
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setConfirmando(true)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirmando(true)}
+            >
               Excluir
             </Button>
           </div>
@@ -145,7 +153,10 @@ export default function ListDetail() {
           </>
         }
       >
-        <p>Tem certeza que quer excluir “{lista.name}”? Isso não pode ser desfeito.</p>
+        <p>
+          Tem certeza que quer excluir “{lista.name}”? Isso não pode ser
+          desfeito.
+        </p>
       </Modal>
     </div>
   );

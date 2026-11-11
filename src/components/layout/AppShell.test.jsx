@@ -24,6 +24,14 @@ describe('AppShell', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
+  it('inclui a navegação inferior do mobile', () => {
+    renderShell();
+
+    expect(
+      screen.getByRole('navigation', { name: 'Navegação inferior' }),
+    ).toBeInTheDocument();
+  });
+
   it('abre o modal de registro a partir do topo e fecha de volta', async () => {
     renderShell();
 
