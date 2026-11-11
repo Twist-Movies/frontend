@@ -80,6 +80,7 @@ const CAMPOS_DA_API = {
   first_name: 'firstName',
   last_name: 'lastName',
   birth_date: 'birthDate',
+  current_password: 'currentPassword',
 };
 
 export function errosDaApiNoFormulario(fieldErrors) {
