@@ -4,13 +4,20 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { renderWithAuth } from '../test/utils';
 import { ApiError } from '../api/errors';
-import { detalheDoFilme, marcarAssistido } from '../api/movies';
+import {
+  detalheDaPessoa,
+  detalheDoFilme,
+  filmesRecomendados,
+  marcarAssistido,
+} from '../api/movies';
 import { criarResenha, listarResenhas } from '../api/reviews';
 import { adicionarFilmeNaPlaylist, listarPlaylists } from '../api/playlists';
 import FilmDetail from './FilmDetail';
 
 vi.mock('../api/movies', () => ({
   detalheDoFilme: vi.fn(),
+  filmesRecomendados: vi.fn(),
+  detalheDaPessoa: vi.fn(),
   marcarAssistido: vi.fn(),
   desmarcarAssistido: vi.fn(),
   adicionarAWatchlist: vi.fn(),
@@ -41,11 +48,19 @@ const FILME = {
   release_date: '1999-03-30',
   runtime_minutes: 136,
   certification: '14',
+  backdrop_path: '/b.jpg',
+  trailer: 'abc123',
   genres: ['Ação', 'Ficção científica'],
-  cast: [{ name: 'Keanu Reeves', character: 'Neo', profile_path: null }],
+  genres_info: [
+    { id: 28, name: 'Ação' },
+    { id: 878, name: 'Ficção científica' },
+  ],
+  cast: [
+    { id: 6384, name: 'Keanu Reeves', character: 'Neo', profile_path: null },
+  ],
   crew: [
-    { name: 'Lana Wachowski', job: 'Director', profile_path: null },
-    { name: 'Joel Silver', job: 'Producer', profile_path: null },
+    { id: 9340, name: 'Lana Wachowski', job: 'Director', profile_path: null },
+    { id: 1, name: 'Joel Silver', job: 'Producer', profile_path: null },
   ],
   tmdb_rating_average: 8.2,
   tmdb_rating_count: 100,
@@ -55,8 +70,15 @@ const FILME = {
     watched_count: 30,
     rating_average: 4.5,
     rating_count: 10,
+    approval_percent: 87,
+    approval_votes: 12,
   },
-  user_state: { watched: false, in_watchlist: false, reaction: null, rating: null },
+  user_state: {
+    watched: false,
+    in_watchlist: false,
+    reaction: null,
+    rating: null,
+  },
 };
 
 const RESENHAS = {
@@ -89,6 +111,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   detalheDoFilme.mockResolvedValue(FILME);
   listarResenhas.mockResolvedValue(RESENHAS);
+  filmesRecomendados.mockResolvedValue({ results: [] });
   marcarAssistido.mockResolvedValue({});
 });
 
@@ -101,24 +124,29 @@ describe('FilmDetail', () => {
     ).toBeInTheDocument();
     expect(detalheDoFilme).toHaveBeenCalledWith('603');
     expect(screen.getByText('The Matrix')).toBeInTheDocument();
-    expect(screen.getByText('1999 · 2h 16min · 14')).toBeInTheDocument();
-    expect(screen.getByText('Lana Wachowski')).toBeInTheDocument();
-    expect(screen.queryByText('Joel Silver')).toBeNull();
-    expect(screen.getByText('Ficção científica')).toBeInTheDocument();
-    expect(screen.getByText('Um hacker descobre a verdade.')).toBeInTheDocument();
+    expect(screen.getByText('1999 · 2h 16min')).toBeInTheDocument();
+    expect(screen.getAllByText('Lana Wachowski').length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole('img', { name: 'Classificação indicativa: 14 anos' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Ficção científica' }),
+    ).toHaveAttribute('href', '/filmes?genero=878');
+    expect(
+      screen.getByText('Um hacker descobre a verdade.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Keanu Reeves')).toBeInTheDocument();
     expect(screen.getByText(/10 avaliações no/)).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Pôster de Matrix' })).toHaveAttribute(
-      'src',
-      'https://image.tmdb.org/t/p/w342/m.jpg',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Pôster de Matrix' }),
+    ).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w342/m.jpg');
   });
 
-  it('mostra as resenhas do filme', async () => {
+  it('mostra os comentários do filme', async () => {
     renderizar();
 
     expect(await screen.findByText('Clássico absoluto')).toBeInTheDocument();
-    expect(listarResenhas).toHaveBeenCalledWith('603', 1);
+    expect(listarResenhas).toHaveBeenCalledWith(603, 1);
   });
 
   it('não mostra ações quando a API não devolve o estado do usuário', async () => {
@@ -151,17 +179,17 @@ describe('FilmDetail', () => {
     expect(marcarAssistido).toHaveBeenCalledWith(603);
   });
 
-  it('publica uma resenha e recarrega a lista', async () => {
+  it('publica um comentário e recarrega a lista', async () => {
     criarResenha.mockResolvedValue({});
     renderizar();
     await screen.findByText('Clássico absoluto');
 
     await userEvent.type(
-      screen.getByLabelText('Escreva sua resenha'),
+      screen.getByLabelText('Escreva seu comentário'),
       'Genial',
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Publicar resenha' }),
+      screen.getByRole('button', { name: 'Publicar comentário' }),
     );
 
     await waitFor(() => expect(listarResenhas).toHaveBeenCalledTimes(2));
@@ -171,20 +199,23 @@ describe('FilmDetail', () => {
     });
   });
 
-  it('mostra o erro de resenha duplicada', async () => {
+  it('mostra o erro de comentário duplicado', async () => {
     criarResenha.mockRejectedValue(
-      new ApiError(400, 'Você já possui uma resenha ativa para este filme.'),
+      new ApiError(400, 'Você já possui um comentário ativo para este filme.'),
     );
     renderizar();
     await screen.findByText('Clássico absoluto');
 
-    await userEvent.type(screen.getByLabelText('Escreva sua resenha'), 'Outra');
+    await userEvent.type(
+      screen.getByLabelText('Escreva seu comentário'),
+      'Outra',
+    );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Publicar resenha' }),
+      screen.getByRole('button', { name: 'Publicar comentário' }),
     );
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Você já possui uma resenha ativa',
+      'Você já possui um comentário ativo',
     );
   });
 
@@ -227,5 +258,123 @@ describe('FilmDetail', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Matrix' }),
     ).toBeInTheDocument();
+  });
+
+  it('mostra a aprovação com o número de votos', async () => {
+    renderizar();
+
+    expect(await screen.findByText('87% de aprovação')).toBeInTheDocument();
+    expect(screen.getByText('(12 votos)')).toBeInTheDocument();
+  });
+
+  it('avisa quando não há votos suficientes', async () => {
+    detalheDoFilme.mockResolvedValue({
+      ...FILME,
+      stats: { ...FILME.stats, approval_percent: null, approval_votes: 1 },
+    });
+    renderizar();
+
+    expect(
+      await screen.findByText('Ainda sem votos suficientes'),
+    ).toBeInTheDocument();
+  });
+
+  it('se omite sem trailer, backdrop, equipe e campos novos', async () => {
+    detalheDoFilme.mockResolvedValue({
+      ...FILME,
+      trailer: null,
+      backdrop_path: null,
+      genres_info: undefined,
+      crew: undefined,
+      cast: undefined,
+      stats: { ...FILME.stats, approval_percent: undefined },
+    });
+    renderizar();
+
+    await screen.findByRole('heading', { level: 1, name: 'Matrix' });
+    expect(screen.queryByRole('button', { name: /trailer/i })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Equipe técnica' })).toBeNull();
+  });
+
+  it('toca o trailer ao clicar no play', async () => {
+    renderizar();
+    await screen.findByRole('heading', { level: 1, name: 'Matrix' });
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Assistir ao trailer de Matrix' }),
+    );
+
+    expect(screen.getByTitle('Trailer de Matrix')).toHaveAttribute(
+      'src',
+      'https://www.youtube-nocookie.com/embed/abc123?autoplay=1',
+    );
+  });
+
+  it('amplia o pôster e devolve o foco ao fechar', async () => {
+    renderizar();
+    await screen.findByRole('heading', { level: 1, name: 'Matrix' });
+    const botao = screen.getByRole('button', { name: 'Ampliar pôster' });
+
+    await userEvent.click(botao);
+    const dialogo = screen.getByRole('dialog', { name: 'Pôster de Matrix' });
+    expect(within(dialogo).getByRole('img')).toHaveAttribute(
+      'src',
+      'https://image.tmdb.org/t/p/w780/m.jpg',
+    );
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(botao).toHaveFocus();
+  });
+
+  it('abre a ficha do diretor e carrega a pessoa', async () => {
+    detalheDaPessoa.mockResolvedValue({
+      id: 9340,
+      name: 'Lana Wachowski',
+      biography: 'Diretora.',
+      movies: [],
+    });
+    renderizar();
+    await screen.findByRole('heading', { level: 1, name: 'Matrix' });
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Lana Wachowski' })[0],
+    );
+
+    expect(await screen.findByText('Diretora.')).toBeInTheDocument();
+    expect(detalheDaPessoa).toHaveBeenCalledWith(9340);
+  });
+
+  it('mostra filmes semelhantes quando existem', async () => {
+    filmesRecomendados.mockResolvedValue({
+      results: [
+        {
+          tmdb_id: 604,
+          title: 'Matrix Reloaded',
+          poster_path: null,
+          release_date: '2003-05-15',
+        },
+      ],
+    });
+    renderizar();
+
+    expect(
+      await screen.findByText(
+        'Se você gostou deste filme, talvez goste destes',
+      ),
+    ).toBeInTheDocument();
+    expect(filmesRecomendados).toHaveBeenCalledWith(603);
+    expect(
+      screen.getByRole('link', { name: 'Matrix Reloaded (2003)' }),
+    ).toBeInTheDocument();
+  });
+
+  it('esconde os semelhantes se a API falhar', async () => {
+    filmesRecomendados.mockRejectedValue(new ApiError(503, 'Fora do ar.'));
+    renderizar();
+
+    await screen.findByRole('heading', { level: 1, name: 'Matrix' });
+    await waitFor(() => expect(filmesRecomendados).toHaveBeenCalled());
+    expect(screen.queryByText(/talvez goste destes/)).toBeNull();
   });
 });

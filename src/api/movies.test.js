@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
-import { setTokens } from './tokens';
+import { setAccessToken } from './tokens';
 import {
   adicionarAWatchlist,
   avaliarFilme,
@@ -18,7 +18,7 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
-  setTokens({ access: 'acc', refresh: 'ref' });
+  setAccessToken('acc');
   fetchMock = instalarFetch();
   fetchMock.mockResolvedValue(json(200, { ok: true }));
 });
@@ -66,13 +66,39 @@ describe('api/movies', () => {
       { reaction: 'LIKE' },
     ],
     ['removerReacao', removerReacao, [603], 'DELETE', '/reaction/'],
-  ])('%s chama o endpoint certo', async (_nome, fn, args, metodo, fim, corpo) => {
-    await fn(...args);
+  ])(
+    '%s chama o endpoint certo',
+    async (_nome, fn, args, metodo, fim, corpo) => {
+      await fn(...args);
 
-    const { url, opcoes } = ultimaChamada(fetchMock);
-    expect(url).toBe(`/api/movies/603${fim}`);
-    expect(opcoes.method).toBe(metodo);
-    if (corpo) expect(JSON.parse(opcoes.body)).toEqual(corpo);
-    else expect(opcoes.body).toBeUndefined();
+      const { url, opcoes } = ultimaChamada(fetchMock);
+      expect(url).toBe(`/api/movies/603${fim}`);
+      expect(opcoes.method).toBe(metodo);
+      if (corpo) expect(JSON.parse(opcoes.body)).toEqual(corpo);
+      else expect(opcoes.body).toBeUndefined();
+    },
+  );
+});
+
+describe('api/movies (recomendações e pessoas)', () => {
+  it('busca filmes recomendados paginados', async () => {
+    const { filmesRecomendados } = await import('./movies');
+    await filmesRecomendados(603, 2);
+    expect(ultimaChamada(fetchMock).url).toBe(
+      '/api/movies/603/recommendations/?page=2',
+    );
+  });
+
+  it('busca a ficha da pessoa', async () => {
+    const { detalheDaPessoa } = await import('./movies');
+    await detalheDaPessoa(6384);
+    expect(ultimaChamada(fetchMock).url).toBe('/api/people/6384/');
+  });
+
+  it('envia nota decimal', async () => {
+    await avaliarFilme(603, 4.5);
+    expect(JSON.parse(ultimaChamada(fetchMock).opcoes.body)).toEqual({
+      stars: 4.5,
+    });
   });
 });

@@ -32,3 +32,10 @@ export const reagirAoFilme = (tmdbId, reaction) =>
   request(`${filme(tmdbId)}/reaction/`, { method: 'PUT', body: { reaction } });
 export const removerReacao = (tmdbId) =>
   request(`${filme(tmdbId)}/reaction/`, { method: 'DELETE' });
+
+// Recomendações do TMDB para o filme (formato paginado igual ao da busca).
+export const filmesRecomendados = (tmdbId, page = 1) =>
+  request(`${filme(tmdbId)}/recommendations/?page=${page}`);
+
+// Ficha da pessoa (elenco/equipe) com os filmes relacionados.
+export const detalheDaPessoa = (tmdbId) => request(`/people/${tmdbId}/`);
