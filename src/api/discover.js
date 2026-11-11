@@ -26,3 +26,8 @@ export function descobrirFilmes({
   }
   return request(`/movies/discover/?${params}`, { auth: false });
 }
+
+// Filmes em alta na semana (público). Mesmo formato paginado do discover.
+export function filmesEmAlta(page = 1) {
+  return request(`/movies/trending/?page=${page}`, { auth: false });
+}
