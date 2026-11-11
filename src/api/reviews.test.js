@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
-import { setTokens } from './tokens';
+import { setAccessToken } from './tokens';
 import {
   criarResenha,
   curtirResenha,
@@ -15,9 +15,9 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
-  setTokens({ access: 'acc', refresh: 'ref' });
+  setAccessToken('acc');
   fetchMock = instalarFetch();
-  fetchMock.mockResolvedValue(json(200, {}));
+  fetchMock.mockImplementation(async () => json(200, {}));
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -25,7 +25,9 @@ afterEach(() => vi.unstubAllGlobals());
 describe('api/reviews', () => {
   it('lista os comentários de um filme por página', async () => {
     await listarResenhas(603, 2);
-    expect(ultimaChamada(fetchMock).url).toBe('/api/movies/603/reviews/?page=2');
+    expect(ultimaChamada(fetchMock).url).toBe(
+      '/api/movies/603/reviews/?page=2',
+    );
   });
 
   it('cria comentário enviando contains_spoiler em snake_case', async () => {

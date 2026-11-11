@@ -6,7 +6,7 @@ import { ApiError } from '../api/errors';
 import { descobrirFilmes } from '../api/discover';
 import { buscarFilmes } from '../api/movies';
 import { VITRINE } from '../lib/vitrine';
-import Landing from './Landing';
+import Landing from '../pages/Landing';
 
 vi.mock('../api/discover', () => ({ descobrirFilmes: vi.fn() }));
 vi.mock('../api/movies', () => ({ buscarFilmes: vi.fn() }));

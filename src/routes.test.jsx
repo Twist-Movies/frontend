@@ -22,16 +22,33 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument();
   });
 
-  it.each([
-    ['/u/davi/filmes', 'Filmes assistidos'],
-    ['/u/davi/diario', 'Diário'],
-    ['/u/davi/watchlist', 'Watchlist'],
-  ])('resolve a rota com parâmetro %s para a tela %s', (route, heading) => {
-    renderAt(route);
+  it.each([['/u/davi/filmes', 'Filmes assistidos']])(
+    'resolve a rota com parâmetro %s para a tela %s',
+    (route, heading) => {
+      renderAt(route);
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: heading }),
-    ).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: heading }),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it.each(['/u/davi/diario', '/u/davi/watchlist'])(
+    'não tem a rota %s (sem endpoint no back), cai no 404',
+    (route) => {
+      renderAt(route);
+
+      expect(screen.getByText('Esta página não existe')).toBeInTheDocument();
+    },
+  );
+
+  it('redireciona /resenha/:id antigo para /comentario/:id', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('off')));
+    renderAt('/resenha/7');
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByText('Esta página não existe')).toBeNull();
+    vi.unstubAllGlobals();
   });
 
   it.each(['/filme/3', '/lista/1', '/comentario/1', '/u/davi'])(
