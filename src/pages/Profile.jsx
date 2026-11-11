@@ -123,7 +123,8 @@ function PerfilPublico({ username, pessoaConhecida }) {
   const [ocupado, setOcupado] = useState(false);
   const [falha, setFalha] = useState(null);
   const { data, error, loading, recarregar, definir } = useAsync(
-    () => carregarPerfilPublico({ username, pessoaConhecida, meuId: session?.id }),
+    () =>
+      carregarPerfilPublico({ username, pessoaConhecida, meuId: session?.id }),
     [username, session?.id],
   );
 
@@ -133,7 +134,7 @@ function PerfilPublico({ username, pessoaConhecida }) {
     return (
       <EmptyState
         title={`Perfil de @${username}`}
-        description="Este perfil só abre a partir de uma resenha ou das suas conexões."
+        description="Este perfil só abre a partir de um comentário ou das suas conexões."
         action={
           <Link to="/membros" className="text-accent">
             Ver membros
@@ -155,7 +156,10 @@ function PerfilPublico({ username, pessoaConhecida }) {
       definir({
         ...data,
         euSigo: !euSigo,
-        seguidores: { ...seguidores, count: seguidores.count + (euSigo ? -1 : 1) },
+        seguidores: {
+          ...seguidores,
+          count: seguidores.count + (euSigo ? -1 : 1),
+        },
       });
       recarregar();
     } catch (e) {

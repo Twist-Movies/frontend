@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
 import {
   EmptyState,
   ErrorState,
+  Input,
   Skeleton,
   Tabs,
 } from '../components/ui';
@@ -9,6 +11,7 @@ import { FormAviso } from '../auth/FormAviso';
 import { PessoaCard } from '../components/members/PessoaCard';
 import { useAuth } from '../auth';
 import {
+  buscarUsuarios,
   deixarDeSeguir,
   listarSeguidores,
   listarSeguindo,
@@ -29,8 +32,87 @@ async function carregarRede(idDaSessao) {
   return { meuId, seguindo, seguidores };
 }
 
+const ATRASO_BUSCA_MS = 400;
+
+// Busca de pessoas por username, com debounce. Com o campo vazio, não aparece nada.
+function BuscaDePessoas({ termo, onChange, ...comum }) {
+  const { session } = useAuth();
+  const [consulta, setConsulta] = useState('');
+
+  useEffect(() => {
+    const id = setTimeout(() => setConsulta(termo.trim()), ATRASO_BUSCA_MS);
+    return () => clearTimeout(id);
+  }, [termo]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="relative max-w-xl">
+        <Search
+          size={18}
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint"
+        />
+        <Input
+          type="search"
+          aria-label="Buscar pessoas"
+          placeholder="Buscar pessoas por username"
+          className="pl-10"
+          value={termo}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+      {termo.trim() && consulta === termo.trim() && (
+        <ResultadoDaBusca
+          q={consulta}
+          meuUsername={session?.username}
+          {...comum}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResultadoDaBusca({
+  q,
+  meuUsername,
+  idsSeguindo,
+  ocupadoId,
+  onAlternar,
+}) {
+  const { data, error, loading, recarregar } = useAsync(
+    () => buscarUsuarios(q),
+    [q],
+  );
+
+  if (error) return <ErrorState error={error} onRetry={recarregar} />;
+  if (!data) return loading ? <Skeleton height={72} /> : null;
+
+  const pessoas = (data.results ?? []).filter(
+    (pessoa) => pessoa.username !== meuUsername,
+  );
+  if (pessoas.length === 0) {
+    return (
+      <EmptyState
+        title="Ninguém encontrado"
+        description={`Nenhum membro com “${q}” no username.`}
+      />
+    );
+  }
+
+  return (
+    <ListaDePessoas
+      pessoas={pessoas}
+      idsSeguindo={idsSeguindo}
+      ocupadoId={ocupadoId}
+      onAlternar={onAlternar}
+    />
+  );
+}
+
 function Grade({ children }) {
-  return <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</ul>;
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</ul>
+  );
 }
 
 function Sugestoes({ rede, idsSeguindo, ocupadoId, onAlternar }) {
@@ -70,7 +152,13 @@ function Sugestoes({ rede, idsSeguindo, ocupadoId, onAlternar }) {
   );
 }
 
-function ListaDePessoas({ pessoas, idsSeguindo, ocupadoId, onAlternar, vazio }) {
+function ListaDePessoas({
+  pessoas,
+  idsSeguindo,
+  ocupadoId,
+  onAlternar,
+  vazio,
+}) {
   if (pessoas.length === 0) return <EmptyState {...vazio} />;
 
   return (
@@ -92,12 +180,16 @@ function ListaDePessoas({ pessoas, idsSeguindo, ocupadoId, onAlternar, vazio }) 
 function Rede() {
   const { session } = useAuth();
   const [aba, setAba] = useState('seguindo');
+  const [busca, setBusca] = useState('');
   const [ocupadoId, setOcupadoId] = useState(null);
   const [falha, setFalha] = useState(null);
-  const { data: rede, error, loading, recarregar, definir } = useAsync(
-    () => carregarRede(session?.id),
-    [session?.id],
-  );
+  const {
+    data: rede,
+    error,
+    loading,
+    recarregar,
+    definir,
+  } = useAsync(() => carregarRede(session?.id), [session?.id]);
 
   if (error) return <ErrorState error={error} onRetry={recarregar} />;
   if (!rede) return loading ? <Skeleton height={120} /> : null;
@@ -126,21 +218,30 @@ function Rede() {
 
   const comum = { idsSeguindo, ocupadoId, onAlternar: alternar };
 
+  const buscando = busca.trim() !== '';
+
   return (
     <>
-      <Tabs
-        active={aba}
-        onChange={setAba}
-        items={[
-          { id: 'seguindo', label: `Seguindo (${rede.seguindo.length})` },
-          { id: 'seguidores', label: `Seguidores (${rede.seguidores.length})` },
-          { id: 'sugestoes', label: 'Sugestões' },
-        ]}
-      />
+      <BuscaDePessoas termo={busca} onChange={setBusca} {...comum} />
+
+      {!buscando && (
+        <Tabs
+          active={aba}
+          onChange={setAba}
+          items={[
+            { id: 'seguindo', label: `Seguindo (${rede.seguindo.length})` },
+            {
+              id: 'seguidores',
+              label: `Seguidores (${rede.seguidores.length})`,
+            },
+            { id: 'sugestoes', label: 'Sugestões' },
+          ]}
+        />
+      )}
 
       <FormAviso erro={falha} />
 
-      {aba === 'seguindo' && (
+      {!buscando && aba === 'seguindo' && (
         <ListaDePessoas
           pessoas={rede.seguindo}
           vazio={{
@@ -150,17 +251,18 @@ function Rede() {
           {...comum}
         />
       )}
-      {aba === 'seguidores' && (
+      {!buscando && aba === 'seguidores' && (
         <ListaDePessoas
           pessoas={rede.seguidores}
           vazio={{
             title: 'Ninguém segue você ainda',
-            description: 'Avalie filmes e escreva resenhas para ser descoberto.',
+            description:
+              'Avalie filmes e escreva comentários para ser descoberto.',
           }}
           {...comum}
         />
       )}
-      {aba === 'sugestoes' && <Sugestoes rede={rede} {...comum} />}
+      {!buscando && aba === 'sugestoes' && <Sugestoes rede={rede} {...comum} />}
     </>
   );
 }

@@ -36,7 +36,8 @@ export async function sugerirMembros({
   return [...contagem.values()]
     .sort(
       (a, b) =>
-        b.comuns - a.comuns || a.pessoa.username.localeCompare(b.pessoa.username),
+        b.comuns - a.comuns ||
+        a.pessoa.username.localeCompare(b.pessoa.username),
     )
     .slice(0, limite);
 }

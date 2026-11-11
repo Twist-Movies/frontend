@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
-import { setTokens } from './tokens';
+import { setAccessToken } from './tokens';
 import {
+  buscarUsuarios,
   deixarDeSeguir,
   editarMeuPerfil,
   excluirMinhaConta,
+  listarResenhasDoUsuario,
   listarSeguidores,
   listarSeguindo,
   obterMeuPerfil,
@@ -15,9 +17,9 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
-  setTokens({ access: 'acc', refresh: 'ref' });
+  setAccessToken('acc');
   fetchMock = instalarFetch();
-  fetchMock.mockResolvedValue(json(200, {}));
+  fetchMock.mockImplementation(async () => json(200, {}));
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -55,7 +57,11 @@ describe('api/users', () => {
 
   it('edita o perfil em multipart quando há avatar', async () => {
     const avatar = new File(['x'], 'a.png', { type: 'image/png' });
-    await editarMeuPerfil({ username: 'davi', birthDate: '2000-01-02', avatar });
+    await editarMeuPerfil({
+      username: 'davi',
+      birthDate: '2000-01-02',
+      avatar,
+    });
 
     const { opcoes } = ultimaChamada(fetchMock);
     expect(opcoes.body).toBeInstanceOf(FormData);
@@ -63,12 +69,31 @@ describe('api/users', () => {
     expect(opcoes.body.get('avatar')).toBeInstanceOf(File);
   });
 
-  it('exclui a conta confirmando o username', async () => {
-    await excluirMinhaConta('davi');
+  it('envia current_password só quando informada', async () => {
+    await editarMeuPerfil({
+      username: 'd',
+      email: 'n@x.com',
+      currentPassword: 'p1',
+    });
+    expect(
+      JSON.parse(ultimaChamada(fetchMock).opcoes.body).current_password,
+    ).toBe('p1');
+
+    await editarMeuPerfil({ username: 'd', email: 'n@x.com' });
+    expect(JSON.parse(ultimaChamada(fetchMock).opcoes.body)).not.toHaveProperty(
+      'current_password',
+    );
+  });
+
+  it('exclui a conta com username e senha', async () => {
+    await excluirMinhaConta({ username: 'davi', password: 'x1' });
 
     const { opcoes } = ultimaChamada(fetchMock);
     expect(opcoes.method).toBe('DELETE');
-    expect(JSON.parse(opcoes.body)).toEqual({ username: 'davi' });
+    expect(JSON.parse(opcoes.body)).toEqual({
+      username: 'davi',
+      password: 'x1',
+    });
   });
 
   it('segue e deixa de seguir', async () => {
@@ -90,5 +115,21 @@ describe('api/users', () => {
     await listarSeguindo(5);
     ({ url } = ultimaChamada(fetchMock));
     expect(url).toBe('/api/users/5/following/?page=1');
+  });
+});
+
+describe('api/users busca e comentários', () => {
+  it('busca pessoas codificando o termo, sem token', async () => {
+    await buscarUsuarios('da vi&', 2);
+
+    const { url, opcoes } = ultimaChamada(fetchMock);
+    expect(url).toBe('/api/users/search/?q=da%20vi%26&page=2');
+    expect(opcoes.headers?.Authorization).toBeUndefined();
+  });
+
+  it('lista os comentários de um usuário', async () => {
+    await listarResenhasDoUsuario(5);
+
+    expect(ultimaChamada(fetchMock).url).toBe('/api/users/5/reviews/?page=1');
   });
 });

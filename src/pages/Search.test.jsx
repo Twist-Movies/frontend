@@ -56,7 +56,11 @@ describe('Search', () => {
   });
 
   it('avisa quando nada é encontrado', async () => {
-    buscarFilmes.mockResolvedValue({ ...RESPOSTA, total_results: 0, results: [] });
+    buscarFilmes.mockResolvedValue({
+      ...RESPOSTA,
+      total_results: 0,
+      results: [],
+    });
     renderBusca('/busca?q=zzz');
 
     expect(await screen.findByText('Nada encontrado')).toBeInTheDocument();
@@ -66,7 +70,9 @@ describe('Search', () => {
     buscarFilmes.mockRejectedValue(new ApiError(503, 'TMDB indisponível.'));
     renderBusca('/busca?q=matrix');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('TMDB indisponível.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'TMDB indisponível.',
+    );
   });
 
   it('vai para a próxima página', async () => {

@@ -49,6 +49,11 @@ export default function Login() {
       }
     >
       <form className={FORM} onSubmit={enviar} noValidate>
+        {location.state?.aviso && (
+          <p role="status" className="text-sm text-success">
+            {location.state.aviso}
+          </p>
+        )}
         <FormAviso erro={falha} />
 
         <Field label="E-mail ou nome de usuário" error={erros.identifier}>
@@ -81,6 +86,13 @@ export default function Login() {
             />
           )}
         </Field>
+
+        <Link
+          to="/esqueci-senha"
+          className="-mt-2 self-end text-sm font-semibold text-accent"
+        >
+          Esqueci minha senha
+        </Link>
 
         <Button
           type="submit"

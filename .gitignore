@@ -25,3 +25,14 @@ dist-ssr
 
 # Relatórios de cobertura (indicador 5) — gerados pelo CI
 coverage
+
+# Playwright (e2e)
+playwright-report/
+test-results/
+
+test-results-integracao/
+
+# Variáveis de ambiente locais
+.env
+.env.*
+!.env.example

@@ -46,7 +46,10 @@ export function PlaylistFormModal({ open, playlist, onClose, onSaved }) {
       onSaved(salva);
     } catch (erro) {
       if (erro.fieldErrors && Object.keys(erro.fieldErrors).length > 0) {
-        setErros({ name: erro.fieldErrors.name, cover: erro.fieldErrors.cover });
+        setErros({
+          name: erro.fieldErrors.name,
+          cover: erro.fieldErrors.cover,
+        });
       }
       setFalha(erro);
     } finally {

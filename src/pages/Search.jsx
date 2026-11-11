@@ -93,7 +93,9 @@ export default function Search() {
             pagina={data.page}
             temAnterior={data.page > 1}
             temProxima={data.page < Math.min(data.total_pages, 500)}
-            onChange={(novaPagina) => setParams({ q, page: String(novaPagina) })}
+            onChange={(novaPagina) =>
+              setParams({ q, page: String(novaPagina) })
+            }
           />
         </>
       )}

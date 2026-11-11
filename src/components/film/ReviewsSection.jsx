@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Button, EmptyState, ErrorState, Paginacao, SectionTitle, Textarea } from '../ui';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Paginacao,
+  SectionTitle,
+  Textarea,
+} from '../ui';
 import { FormAviso } from '../../auth/FormAviso';
 import { criarResenha, listarResenhas } from '../../api/reviews';
 import { useAsync } from '../../lib/useAsync';
@@ -35,8 +42,8 @@ function NovaResenha({ tmdbId, onCreated }) {
     <form className="mb-6 flex flex-col gap-3" onSubmit={enviar}>
       <FormAviso erro={erro} />
       <Textarea
-        aria-label="Escreva sua resenha"
-        placeholder="Escreva sua resenha…"
+        aria-label="Escreva seu comentário"
+        placeholder="Escreva seu comentário…"
         maxLength={5000}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
@@ -55,7 +62,7 @@ function NovaResenha({ tmdbId, onCreated }) {
           variant="primary"
           disabled={enviando || !texto.trim()}
         >
-          {enviando ? 'Publicando…' : 'Publicar resenha'}
+          {enviando ? 'Publicando…' : 'Publicar comentário'}
         </Button>
       </div>
     </form>
@@ -72,20 +79,24 @@ export function ReviewsSection({ tmdbId }) {
   const trocar = (atualizada) =>
     definir({
       ...data,
-      results: data.results.map((r) => (r.id === atualizada.id ? atualizada : r)),
+      results: data.results.map((r) =>
+        r.id === atualizada.id ? atualizada : r,
+      ),
     });
 
   return (
-    <section aria-label="Resenhas">
-      <SectionTitle>Resenhas</SectionTitle>
+    <section aria-label="Comentários">
+      <SectionTitle>Comentários</SectionTitle>
       <NovaResenha tmdbId={tmdbId} onCreated={recarregar} />
 
       {error && <ErrorState error={error} onRetry={recarregar} />}
-      {loading && !data && <p className="text-muted">Carregando resenhas…</p>}
+      {loading && !data && (
+        <p className="text-muted">Carregando comentários…</p>
+      )}
 
       {data && data.results.length === 0 && (
         <EmptyState
-          title="Nenhuma resenha ainda"
+          title="Nenhum comentário ainda"
           description="Seja o primeiro a escrever sobre este filme."
         />
       )}

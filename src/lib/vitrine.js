@@ -51,7 +51,9 @@ function gravarCache(itens) {
 
 function escolher(resultados, ano) {
   const comPoster = resultados.filter((filme) => filme.poster_path);
-  return comPoster.find((filme) => anoDe(filme.release_date) === ano) ?? comPoster[0];
+  return (
+    comPoster.find((filme) => anoDe(filme.release_date) === ano) ?? comPoster[0]
+  );
 }
 
 function paraItem(filme) {

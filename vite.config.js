@@ -2,6 +2,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
+import { configDefaults } from 'vitest/config';
 
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
@@ -19,6 +20,8 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: 'jsdom',
+    // Os testes end-to-end (Playwright) têm o próprio runner.
+    exclude: [...configDefaults.exclude, 'e2e/**', 'e2e-integracao/**'],
     // O pool padrão (forks) trava no Windows.
     pool: 'threads',
     // Formulários longos digitados campo a campo passam de 5s com a suíte inteira rodando.

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { onSessionExpired, request } from './client';
-import { getTokens, setTokens } from './tokens';
+import { onSessionExpired, renovarUmaVez, request } from './client';
+import { clearAccessToken, getAccessToken, setAccessToken } from './tokens';
 
 function resposta(status, corpo, tipo = 'application/json') {
   const texto =
@@ -16,6 +16,7 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
+  clearAccessToken();
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -77,7 +78,7 @@ describe('request', () => {
   });
 
   it('manda o access token nas rotas autenticadas', async () => {
-    setTokens({ access: 'acc', refresh: 'ref' });
+    setAccessToken('acc');
     fetchMock.mockResolvedValue(resposta(200, {}));
 
     await request('/users/me/');
@@ -85,7 +86,7 @@ describe('request', () => {
   });
 
   it('não manda token em rota pública', async () => {
-    setTokens({ access: 'acc', refresh: 'ref' });
+    setAccessToken('acc');
     fetchMock.mockResolvedValue(resposta(200, {}));
 
     await request('/accounts/login/', {
@@ -146,7 +147,7 @@ describe('request', () => {
 
 describe('renovação do token', () => {
   it('renova o access num 401 e repete a chamada', async () => {
-    setTokens({ access: 'velho', refresh: 'ref' });
+    setAccessToken('velho');
     fetchMock
       .mockResolvedValueOnce(
         resposta(401, { detail: 'Token expirado', code: 'token_not_valid' }),
@@ -157,26 +158,52 @@ describe('renovação do token', () => {
     await expect(request('/users/me/')).resolves.toEqual({ username: 'davi' });
 
     expect(fetchMock.mock.calls[1][0]).toBe('/api/accounts/token/refresh/');
-    expect(fetchMock.mock.calls[1][1].body).toBe('{"refresh":"ref"}');
+    const [, opcoesRefresh] = fetchMock.mock.calls[1];
+    expect(opcoesRefresh.body).toBeUndefined();
+    expect(opcoesRefresh.credentials).toBe('include');
+    expect(opcoesRefresh.headers['X-Twist-Client']).toBe('web');
+    expect(opcoesRefresh.headers.Authorization).toBeUndefined();
     expect(fetchMock.mock.calls[2][1].headers.Authorization).toBe(
       'Bearer novo',
     );
-    expect(getTokens()).toEqual({ access: 'novo', refresh: 'ref' });
+    expect(getAccessToken()).toBe('novo');
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
   });
 
-  it('guarda o refresh novo quando o back rotaciona', async () => {
-    setTokens({ access: 'velho', refresh: 'ref' });
-    fetchMock
-      .mockResolvedValueOnce(resposta(401, {}))
-      .mockResolvedValueOnce(resposta(200, { access: 'novo', refresh: 'ref2' }))
-      .mockResolvedValueOnce(resposta(200, {}));
+  it('manda credentials include em todas as requisições', async () => {
+    fetchMock.mockImplementation(async () => resposta(200, {}));
 
-    await request('/x/');
-    expect(getTokens()).toEqual({ access: 'novo', refresh: 'ref2' });
+    await request('/x/', { auth: false });
+    await request('/y/', { method: 'POST', body: {}, auth: false });
+
+    for (const [, opcoes] of fetchMock.mock.calls) {
+      expect(opcoes.credentials).toBe('include');
+    }
+  });
+
+  it('não manda X-Twist-Client em chamadas comuns', async () => {
+    fetchMock.mockResolvedValue(resposta(200, {}));
+    await request('/x/', { auth: false });
+    expect(
+      fetchMock.mock.calls[0][1].headers['X-Twist-Client'],
+    ).toBeUndefined();
+  });
+
+  it('renovarUmaVez devolve false sem access na resposta', async () => {
+    fetchMock.mockResolvedValue(resposta(200, {}));
+    await expect(renovarUmaVez()).resolves.toBe(false);
+    expect(getAccessToken()).toBeNull();
+  });
+
+  it('renovarUmaVez restaura o access sem access prévio (boot)', async () => {
+    fetchMock.mockResolvedValue(resposta(200, { access: 'restaurado' }));
+    await expect(renovarUmaVez()).resolves.toBe(true);
+    expect(getAccessToken()).toBe('restaurado');
   });
 
   it('faz um único refresh para várias chamadas que recebem 401 juntas', async () => {
-    setTokens({ access: 'velho', refresh: 'ref' });
+    setAccessToken('velho');
     fetchMock.mockImplementation(async (url, opcoes) => {
       if (url.endsWith('/token/refresh/')) {
         return resposta(200, { access: 'novo' });
@@ -195,7 +222,7 @@ describe('renovação do token', () => {
   });
 
   it('encerra a sessão e avisa quando o refresh é recusado', async () => {
-    setTokens({ access: 'velho', refresh: 'revogado' });
+    setAccessToken('velho');
     const aviso = vi.fn();
     const cancelar = onSessionExpired(aviso);
     fetchMock
@@ -206,14 +233,14 @@ describe('renovação do token', () => {
       status: 401,
       message: 'Sua sessão expirou. Entre novamente.',
     });
-    expect(getTokens()).toBeNull();
+    expect(getAccessToken()).toBeNull();
     expect(aviso).toHaveBeenCalledOnce();
 
     cancelar();
   });
 
   it('trata falha de rede no refresh como sessão expirada', async () => {
-    setTokens({ access: 'velho', refresh: 'ref' });
+    setAccessToken('velho');
     fetchMock
       .mockResolvedValueOnce(resposta(401, {}))
       .mockRejectedValueOnce(new TypeError('offline'));
@@ -221,7 +248,7 @@ describe('renovação do token', () => {
     await expect(request('/x/')).rejects.toMatchObject({ status: 401 });
   });
 
-  it('não tenta renovar sem tokens guardados', async () => {
+  it('não tenta renovar sem access em memória', async () => {
     fetchMock.mockResolvedValue(resposta(401, { detail: 'Não autenticado.' }));
 
     await expect(request('/users/me/')).rejects.toMatchObject({ status: 401 });
@@ -229,7 +256,7 @@ describe('renovação do token', () => {
   });
 
   it('não tenta renovar em rota pública', async () => {
-    setTokens({ access: 'a', refresh: 'r' });
+    setAccessToken('acc');
     fetchMock.mockResolvedValue(
       resposta(401, { error: 'Invalid credentials' }),
     );
@@ -243,7 +270,7 @@ describe('renovação do token', () => {
   });
 
   it('para de avisar depois de cancelar a inscrição', async () => {
-    setTokens({ access: 'velho', refresh: 'x' });
+    setAccessToken('velho');
     const aviso = vi.fn();
     onSessionExpired(aviso)();
     fetchMock

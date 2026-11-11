@@ -1,8 +1,19 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { login, logout, register } from './auth.mock';
-import { getTokens } from './tokens';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  login,
+  logout,
+  restore,
+  redefinirSenha,
+  register,
+  solicitarRecuperacaoSenha,
+} from './auth.mock';
+import { clearAccessToken, getAccessToken } from './tokens';
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+  clearAccessToken();
+});
 
 describe('login (simulado)', () => {
   it('aceita e-mail ou username, sem diferenciar maiúsculas', async () => {
@@ -13,7 +24,8 @@ describe('login (simulado)', () => {
     await expect(
       login({ identifier: 'marina', password: 'twist1234' }),
     ).resolves.toMatchObject({ username: 'marina' });
-    expect(getTokens()).not.toBeNull();
+    expect(getAccessToken()).not.toBeNull();
+    expect(localStorage.length).toBe(0);
   });
 
   it('recusa senha errada com 401, como o Django', async () => {
@@ -40,7 +52,8 @@ describe('register (simulado)', () => {
       username: `bia_${sufixo}`,
       displayName: 'Bia Souza',
     });
-    expect(getTokens()).not.toBeNull();
+    expect(getAccessToken()).not.toBeNull();
+    expect(localStorage.length).toBe(0);
   });
 
   it('recusa username e e-mail em uso com erros por campo (400)', async () => {
@@ -56,10 +69,70 @@ describe('register (simulado)', () => {
   });
 });
 
-describe('logout (simulado)', () => {
-  it('limpa os tokens', async () => {
+describe('logout e restore (simulado)', () => {
+  it('limpa o access e a simulação do cookie', async () => {
     await login({ identifier: 'davi', password: 'twist1234' });
     await logout();
-    expect(getTokens()).toBeNull();
+    expect(getAccessToken()).toBeNull();
+    await expect(restore()).resolves.toBeNull();
+  });
+
+  it('restaura a sessão após "recarregar" (access some, flag fica)', async () => {
+    await login({ identifier: 'davi', password: 'twist1234' });
+    clearAccessToken();
+
+    await expect(restore()).resolves.toMatchObject({ username: 'davi' });
+    expect(getAccessToken()).toBe('mock-access-davi');
+  });
+
+  it('sem login prévio não há o que restaurar', async () => {
+    await expect(restore()).resolves.toBeNull();
+  });
+
+  it('não quebra com sessionStorage bloqueado', async () => {
+    const bloqueado = () => {
+      throw new Error('bloqueado');
+    };
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(bloqueado);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(bloqueado);
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(bloqueado);
+    await expect(restore()).resolves.toBeNull();
+    await expect(
+      login({ identifier: 'davi', password: 'twist1234' }),
+    ).resolves.toBeDefined();
+    await expect(logout()).resolves.toBeUndefined();
+    vi.restoreAllMocks();
+  });
+});
+
+describe('recuperação de senha (simulada)', () => {
+  it('a solicitação é sempre bem-sucedida', async () => {
+    await expect(
+      solicitarRecuperacaoSenha('qualquer@x.com'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('redefine a senha com o token válido', async () => {
+    await redefinirSenha({
+      uid: 'marina',
+      token: 'valido',
+      password: 'nova12345',
+    });
+
+    await expect(
+      login({ identifier: 'marina', password: 'nova12345' }),
+    ).resolves.toMatchObject({ username: 'marina' });
+    await expect(
+      login({ identifier: 'marina', password: 'twist1234' }),
+    ).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('rejeita outros tokens com 400', async () => {
+    await expect(
+      redefinirSenha({ uid: 'davi', token: 'velho', password: 'nova12345' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Link inválido ou expirado.',
+    });
   });
 });

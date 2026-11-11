@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { Footer } from './Footer';
 
 describe('Footer', () => {
-  it('mostra o ano atual e avisa que os dados são fictícios', () => {
+  it('mostra o ano atual e os direitos reservados', () => {
     render(<Footer />);
 
     const rodape = screen.getByRole('contentinfo');
     expect(rodape).toHaveTextContent(`Twist ${new Date().getFullYear()}`);
-    expect(rodape).toHaveTextContent(/dados fictícios/i);
+    expect(rodape).toHaveTextContent(/todos os direitos reservados/i);
   });
 });

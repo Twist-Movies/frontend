@@ -1,32 +1,11 @@
-import { getTokens } from '../api/tokens';
+// A sessão (perfil) vive só em memória no AuthContext. Nada de perfil, e-mail
+// ou token é persistido: ao recarregar, o app restaura tudo via cookie de
+// refresh + /users/me/. Versões antigas gravavam o perfil (com e-mail) em
+// localStorage; esta função apaga esse resquício.
+const CHAVE_LEGADA = 'twist:session';
 
-const CHAVE = 'twist:session';
-
-export function loadStoredSession() {
+export function limparSessaoLegada() {
   try {
-    if (!getTokens()) return null;
-    const dados = JSON.parse(localStorage.getItem(CHAVE) ?? 'null');
-    if (!dados?.username) return null;
-    return {
-      id: dados.id,
-      username: dados.username,
-      displayName: dados.displayName ?? dados.username,
-      email: dados.email,
-      avatarUrl: dados.avatarUrl,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function storeSession(session) {
-  try {
-    localStorage.setItem(CHAVE, JSON.stringify(session));
-  } catch {}
-}
-
-export function clearStoredSession() {
-  try {
-    localStorage.removeItem(CHAVE);
+    localStorage.removeItem(CHAVE_LEGADA);
   } catch {}
 }

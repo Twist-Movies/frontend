@@ -14,7 +14,7 @@ import { editarResenha, excluirResenha, obterResenha } from '../api/reviews';
 import { useAsync } from '../lib/useAsync';
 import { anoDe } from '../lib/tmdbImage';
 
-function EditarResenha({ review, onSaved, onCancel }) {
+function EditarComentário({ review, onSaved, onCancel }) {
   const [texto, setTexto] = useState(review.content);
   const [spoiler, setSpoiler] = useState(review.contains_spoiler);
   const [erro, setErro] = useState(null);
@@ -43,7 +43,7 @@ function EditarResenha({ review, onSaved, onCancel }) {
     <form className="flex flex-col gap-3" onSubmit={salvar}>
       <FormAviso erro={erro} />
       <Textarea
-        aria-label="Editar resenha"
+        aria-label="Editar comentário"
         maxLength={5000}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
@@ -57,7 +57,11 @@ function EditarResenha({ review, onSaved, onCancel }) {
         Contém spoilers
       </label>
       <div className="flex gap-2">
-        <Button type="submit" variant="primary" disabled={salvando || !texto.trim()}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={salvando || !texto.trim()}
+        >
           {salvando ? 'Salvando…' : 'Salvar'}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
@@ -75,10 +79,13 @@ export default function ReviewDetail() {
   const [editando, setEditando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [falha, setFalha] = useState(null);
-  const { data: review, error, loading, recarregar, definir } = useAsync(
-    () => obterResenha(reviewId),
-    [reviewId],
-  );
+  const {
+    data: review,
+    error,
+    loading,
+    recarregar,
+    definir,
+  } = useAsync(() => obterResenha(reviewId), [reviewId]);
 
   if (error) return <ErrorState error={error} onRetry={recarregar} />;
   if (!review) return loading ? <Skeleton height={120} /> : null;
@@ -100,7 +107,7 @@ export default function ReviewDetail() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <header>
-        <p className="text-sm text-muted">Resenha de</p>
+        <p className="text-sm text-muted">Comentário de</p>
         <h1 className="text-3xl font-black">
           <Link to={`/filme/${movie.tmdb_id}`} className="hover:text-accent">
             {movie.title}
@@ -117,7 +124,7 @@ export default function ReviewDetail() {
       <FormAviso erro={falha} />
 
       {editando ? (
-        <EditarResenha
+        <EditarComentário
           review={review}
           onCancel={() => setEditando(false)}
           onSaved={(atualizada) => {
@@ -134,7 +141,11 @@ export default function ReviewDetail() {
           <Button size="sm" onClick={() => setEditando(true)}>
             Editar
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setConfirmando(true)}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmando(true)}
+          >
             Excluir
           </Button>
         </div>
@@ -142,7 +153,7 @@ export default function ReviewDetail() {
 
       <Modal
         open={confirmando}
-        title="Excluir resenha"
+        title="Excluir comentário"
         onClose={() => setConfirmando(false)}
         footer={
           <>
@@ -155,7 +166,7 @@ export default function ReviewDetail() {
           </>
         }
       >
-        <p>Tem certeza que quer excluir esta resenha?</p>
+        <p>Tem certeza que quer excluir este comentário?</p>
       </Modal>
     </div>
   );

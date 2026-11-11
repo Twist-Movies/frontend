@@ -109,7 +109,10 @@ export function aplicarFiltrosLocais(filmes, filtros) {
 
   const filtrados = filmes.filter((filme) => {
     const ano = anoDe(filme.release_date);
-    if (decada !== null && (ano === undefined || ano < decada || ano >= decada + 10)) {
+    if (
+      decada !== null &&
+      (ano === undefined || ano < decada || ano >= decada + 10)
+    ) {
       return false;
     }
     return !notaMinima || filme.tmdb_rating_average >= notaMinima;

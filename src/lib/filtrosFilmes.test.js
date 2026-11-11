@@ -17,7 +17,11 @@ describe('filtrosDaUrl', () => {
 
   it('lê filtros válidos e o título', () => {
     expect(
-      filtrosDaUrl(url('q=%20matrix%20&genero=18&decada=1990&duracao=curta&nota=8&ordem=nota')),
+      filtrosDaUrl(
+        url(
+          'q=%20matrix%20&genero=18&decada=1990&duracao=curta&nota=8&ordem=nota',
+        ),
+      ),
     ).toEqual({
       q: 'matrix',
       genero: '18',
@@ -30,7 +34,9 @@ describe('filtrosDaUrl', () => {
 
   it('descarta valores desconhecidos', () => {
     expect(
-      filtrosDaUrl(url('genero=999&decada=1850&duracao=x&nota=1&ordem=aleatoria')),
+      filtrosDaUrl(
+        url('genero=999&decada=1850&duracao=x&nota=1&ordem=aleatoria'),
+      ),
     ).toEqual(FILTROS_VAZIOS);
   });
 });
@@ -109,7 +115,9 @@ describe('aplicarFiltrosLocais', () => {
   const ids = (lista) => lista.map((f) => f.tmdb_id);
 
   it('mantém a ordem original por padrão', () => {
-    expect(ids(aplicarFiltrosLocais(todos, FILTROS_VAZIOS))).toEqual([1, 2, 3, 4]);
+    expect(ids(aplicarFiltrosLocais(todos, FILTROS_VAZIOS))).toEqual([
+      1, 2, 3, 4,
+    ]);
   });
 
   it('filtra por década, excluindo filmes sem data', () => {
@@ -132,7 +140,9 @@ describe('aplicarFiltrosLocais', () => {
 
   it('ordena por data de lançamento, da mais recente para a mais antiga', () => {
     expect(
-      ids(aplicarFiltrosLocais(todos, { ...FILTROS_VAZIOS, ordem: 'lancamento' })),
+      ids(
+        aplicarFiltrosLocais(todos, { ...FILTROS_VAZIOS, ordem: 'lancamento' }),
+      ),
     ).toEqual([2, 3, 1, 4]);
   });
 

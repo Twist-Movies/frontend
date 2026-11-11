@@ -53,9 +53,9 @@ describe('Input', () => {
 
 describe('Textarea', () => {
   it('renderiza e sinaliza estado inválido', () => {
-    render(<Textarea invalid aria-label="Resenha" />);
+    render(<Textarea invalid aria-label="Comentário" />);
 
-    const textarea = screen.getByLabelText('Resenha');
+    const textarea = screen.getByLabelText('Comentário');
     expect(textarea).toHaveAttribute('aria-invalid', 'true');
   });
 });

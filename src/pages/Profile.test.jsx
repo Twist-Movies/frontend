@@ -72,8 +72,13 @@ describe('Profile (próprio perfil)', () => {
     expect(listarSeguidores).toHaveBeenCalledWith(4);
     expect(listarSeguindo).toHaveBeenCalledWith(4);
 
-    expect(screen.getByRole('tab', { name: 'Seguidores (21)' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /ana/ })).toHaveAttribute('href', '/u/ana');
+    expect(
+      screen.getByRole('tab', { name: 'Seguidores (21)' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ana/ })).toHaveAttribute(
+      'href',
+      '/u/ana',
+    );
     expect(screen.getByText('Mostrando 1 de 21.')).toBeInTheDocument();
   });
 
@@ -98,7 +103,9 @@ describe('Profile (próprio perfil)', () => {
     obterMeuPerfil.mockRejectedValue(new ApiError(500, 'Falha no servidor.'));
     renderizar('/u/davi');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Falha no servidor.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Falha no servidor.',
+    );
   });
 });
 
@@ -138,16 +145,22 @@ describe('Profile (perfil de outro membro)', () => {
     });
   });
 
-  it('mostra o perfil de quem veio de uma resenha, com contadores e botão de seguir', async () => {
+  it('mostra o perfil de quem veio de um comentário, com contadores e botão de seguir', async () => {
     renderizar(daNavegacao());
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Ana Souza' }),
     ).toBeInTheDocument();
     expect(screen.getByText('@ana')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Seguir ana' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Seguidores (3)' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Seguindo (2)' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Seguir ana' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: 'Seguidores (3)' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: 'Seguindo (2)' }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Editar perfil' })).toBeNull();
     expect(listarSeguidores).toHaveBeenCalledWith(5);
   });
@@ -163,13 +176,17 @@ describe('Profile (perfil de outro membro)', () => {
 
   it('segue a pessoa e atualiza o botão e a contagem', async () => {
     renderizar(daNavegacao());
-    await userEvent.click(await screen.findByRole('button', { name: 'Seguir ana' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Seguir ana' }),
+    );
 
     expect(
       await screen.findByRole('button', { name: 'Deixar de seguir ana' }),
     ).toBeInTheDocument();
     expect(seguirUsuario).toHaveBeenCalledWith(5);
-    expect(await screen.findByRole('tab', { name: 'Seguidores (4)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('tab', { name: 'Seguidores (4)' }),
+    ).toBeInTheDocument();
   });
 
   it('deixa de seguir a pessoa', async () => {
@@ -180,16 +197,24 @@ describe('Profile (perfil de outro membro)', () => {
       await screen.findByRole('button', { name: 'Deixar de seguir ana' }),
     );
 
-    expect(await screen.findByRole('button', { name: 'Seguir ana' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Seguir ana' }),
+    ).toBeInTheDocument();
     expect(deixarDeSeguir).toHaveBeenCalledWith(5);
-    expect(await screen.findByRole('tab', { name: 'Seguidores (2)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('tab', { name: 'Seguidores (2)' }),
+    ).toBeInTheDocument();
   });
 
   it('mostra o erro da API e mantém o botão como estava', async () => {
-    seguirUsuario.mockRejectedValue(new ApiError(400, 'Você já segue este usuário.'));
+    seguirUsuario.mockRejectedValue(
+      new ApiError(400, 'Você já segue este usuário.'),
+    );
     renderizar(daNavegacao());
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Seguir ana' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Seguir ana' }),
+    );
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Você já segue');
     expect(screen.getByRole('button', { name: 'Seguir ana' })).toBeEnabled();
@@ -228,13 +253,18 @@ describe('Profile (perfil de outro membro)', () => {
     renderizar(daNavegacao());
     await screen.findByRole('heading', { level: 1, name: 'Ana Souza' });
 
-    expect(screen.getByRole('link', { name: /bia/ })).toHaveAttribute('href', '/u/bia');
+    expect(screen.getByRole('link', { name: /bia/ })).toHaveAttribute(
+      'href',
+      '/u/bia',
+    );
   });
 
   it('mostra o erro de carga', async () => {
     listarSeguindo.mockRejectedValue(new ApiError(500, 'Falha no servidor.'));
     renderizar(daNavegacao());
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Falha no servidor.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Falha no servidor.',
+    );
   });
 });

@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { login, logout, register } from './auth';
-import { getTokens, setTokens } from './tokens';
+import {
+  login,
+  logout,
+  restore,
+  redefinirSenha,
+  register,
+  solicitarRecuperacaoSenha,
+} from './auth';
+import { clearAccessToken, getAccessToken, setAccessToken } from './tokens';
 
 function json(status, corpo) {
   return new Response(corpo === undefined ? null : JSON.stringify(corpo), {
@@ -13,6 +20,8 @@ let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
+  clearAccessToken();
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -20,10 +29,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('login (API real)', () => {
-  it('envia identifier e senha e guarda os tokens', async () => {
-    fetchMock.mockResolvedValue(
-      json(200, { access: 'acc', refresh: 'ref', username: 'davi' }),
-    );
+  it('envia identifier e senha e guarda o access só em memória', async () => {
+    fetchMock.mockResolvedValue(json(200, { access: 'acc', username: 'davi' }));
 
     const sessao = await login({ identifier: ' davi ', password: 'x' });
 
@@ -33,7 +40,10 @@ describe('login (API real)', () => {
       identifier: 'davi',
       password: 'x',
     });
-    expect(getTokens()).toEqual({ access: 'acc', refresh: 'ref' });
+    expect(opcoes.credentials).toBe('include');
+    expect(getAccessToken()).toBe('acc');
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
     expect(sessao).toEqual({ username: 'davi', displayName: 'davi' });
   });
 
@@ -46,7 +56,7 @@ describe('login (API real)', () => {
       status: 401,
       message: 'E-mail, usuário ou senha incorretos.',
     });
-    expect(getTokens()).toBeNull();
+    expect(getAccessToken()).toBeNull();
   });
 });
 
@@ -73,9 +83,7 @@ describe('register (API real)', () => {
           avatar_url: null,
         }),
       )
-      .mockResolvedValueOnce(
-        json(200, { access: 'acc', refresh: 'ref', username: 'davi' }),
-      );
+      .mockResolvedValueOnce(json(200, { access: 'acc', username: 'davi' }));
 
     const sessao = await register(CADASTRO);
 
@@ -105,9 +113,7 @@ describe('register (API real)', () => {
       .mockResolvedValueOnce(
         json(201, { username: 'davi', avatar_url: 'https://x/a.png' }),
       )
-      .mockResolvedValueOnce(
-        json(200, { access: 'a', refresh: 'r', username: 'davi' }),
-      );
+      .mockResolvedValueOnce(json(200, { access: 'a', username: 'davi' }));
     const foto = new File(['x'], 'eu.png', { type: 'image/png' });
 
     const sessao = await register({ ...CADASTRO, avatar: foto });
@@ -130,30 +136,112 @@ describe('register (API real)', () => {
   });
 });
 
+describe('restore (API real)', () => {
+  it('troca o cookie de refresh por um access novo', async () => {
+    fetchMock.mockResolvedValue(json(200, { access: 'novo' }));
+
+    await expect(restore()).resolves.toEqual({});
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/accounts/token/refresh/');
+    expect(opcoes.credentials).toBe('include');
+    expect(opcoes.headers['X-Twist-Client']).toBe('web');
+    expect(opcoes.body).toBeUndefined();
+    expect(getAccessToken()).toBe('novo');
+    expect(localStorage.length).toBe(0);
+  });
+
+  it('devolve null quando não há cookie válido (401)', async () => {
+    fetchMock.mockResolvedValue(json(401, { detail: 'sem cookie' }));
+    await expect(restore()).resolves.toBeNull();
+    expect(getAccessToken()).toBeNull();
+  });
+
+  it('devolve null em falha de rede', async () => {
+    fetchMock.mockRejectedValue(new TypeError('offline'));
+    await expect(restore()).resolves.toBeNull();
+  });
+
+  it('não chama a API quando já há access em memória', async () => {
+    setAccessToken('acc');
+    await expect(restore()).resolves.toEqual({});
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('logout (API real)', () => {
-  it('revoga o refresh token e limpa os tokens', async () => {
-    setTokens({ access: 'acc', refresh: 'ref' });
+  it('chama a API sem corpo, com credentials e X-Twist-Client, e limpa a memória', async () => {
+    setAccessToken('acc');
     fetchMock.mockResolvedValue(new Response(null, { status: 205 }));
 
     await logout();
 
     const [url, opcoes] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/accounts/logout/');
-    expect(opcoes.headers.Authorization).toBe('Bearer acc');
-    expect(JSON.parse(opcoes.body)).toEqual({ refresh: 'ref' });
-    expect(getTokens()).toBeNull();
+    expect(opcoes.method).toBe('POST');
+    expect(opcoes.body).toBeUndefined();
+    expect(opcoes.credentials).toBe('include');
+    expect(opcoes.headers['X-Twist-Client']).toBe('web');
+    expect(opcoes.headers.Authorization).toBeUndefined();
+    expect(getAccessToken()).toBeNull();
   });
 
-  it('limpa os tokens mesmo se a API falhar', async () => {
-    setTokens({ access: 'acc', refresh: 'ref' });
+  it('funciona sem access em memória (expirado/ausente)', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 205 }));
+
+    await logout();
+
+    const [, opcoes] = fetchMock.mock.calls[0];
+    expect(opcoes.headers.Authorization).toBeUndefined();
+    expect(opcoes.credentials).toBe('include');
+    expect(opcoes.headers['X-Twist-Client']).toBe('web');
+  });
+
+  it('limpa a memória mesmo se a API falhar', async () => {
+    setAccessToken('acc');
     fetchMock.mockRejectedValue(new TypeError('offline'));
 
     await expect(logout()).resolves.toBeUndefined();
-    expect(getTokens()).toBeNull();
+    expect(getAccessToken()).toBeNull();
+  });
+});
+
+describe('recuperação de senha (API real)', () => {
+  it('solicita o link sem autenticação', async () => {
+    setAccessToken('acc');
+    fetchMock.mockResolvedValue(json(200, { detail: 'ok' }));
+
+    await solicitarRecuperacaoSenha(' a@b.co ');
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/accounts/password-reset/');
+    expect(opcoes.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(opcoes.body)).toEqual({ email: 'a@b.co' });
   });
 
-  it('não chama a API quando não há tokens', async () => {
-    await logout();
-    expect(fetchMock).not.toHaveBeenCalled();
+  it('redefine enviando uid, token e new_password', async () => {
+    fetchMock.mockResolvedValue(json(200, { detail: 'ok' }));
+
+    await redefinirSenha({ uid: 'u', token: 't', password: 'senhaforte1' });
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/accounts/password-reset/confirm/');
+    expect(JSON.parse(opcoes.body)).toEqual({
+      uid: 'u',
+      token: 't',
+      new_password: 'senhaforte1',
+    });
+  });
+
+  it('propaga o erro de link inválido', async () => {
+    fetchMock.mockResolvedValue(
+      json(400, { detail: 'Link inválido ou expirado.' }),
+    );
+    await expect(
+      redefinirSenha({ uid: 'u', token: 't', password: 'x' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Link inválido ou expirado.',
+    });
   });
 });

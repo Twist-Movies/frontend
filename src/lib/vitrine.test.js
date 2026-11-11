@@ -46,7 +46,10 @@ describe('carregarVitrine (catálogo)', () => {
 
     const itens = await carregarVitrine();
 
-    expect(descobrirFilmes).toHaveBeenCalledWith({ page: 1, sort: 'popularity' });
+    expect(descobrirFilmes).toHaveBeenCalledWith({
+      page: 1,
+      sort: 'popularity',
+    });
     expect(buscarFilmes).not.toHaveBeenCalled();
     expect(itens[0]).toEqual({
       id: 500,

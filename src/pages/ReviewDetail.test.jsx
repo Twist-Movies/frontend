@@ -36,10 +36,10 @@ const REVIEW = {
 function renderizar(sessao) {
   renderWithAuth(
     <Routes>
-      <Route path="/resenha/:reviewId" element={<ReviewDetail />} />
+      <Route path="/comentario/:reviewId" element={<ReviewDetail />} />
       <Route path="/filme/:filmId" element={<p>página do filme</p>} />
     </Routes>,
-    { route: '/resenha/5', ...(sessao ? { session: sessao } : {}) },
+    { route: '/comentario/5', ...(sessao ? { session: sessao } : {}) },
   );
 }
 
@@ -49,7 +49,7 @@ beforeEach(() => {
 });
 
 describe('ReviewDetail', () => {
-  it('mostra a resenha e o filme', async () => {
+  it('mostra o comentário e o filme', async () => {
     renderizar();
 
     expect(await screen.findByText('Gostei muito')).toBeInTheDocument();
@@ -68,13 +68,13 @@ describe('ReviewDetail', () => {
     expect(screen.queryByRole('button', { name: 'Excluir' })).toBeNull();
   });
 
-  it('edita a resenha', async () => {
+  it('edita o comentário', async () => {
     editarResenha.mockResolvedValue({ ...REVIEW, content: 'Adorei' });
     renderizar();
     await screen.findByText('Gostei muito');
 
     await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
-    const campo = screen.getByLabelText('Editar resenha');
+    const campo = screen.getByLabelText('Editar comentário');
     await userEvent.clear(campo);
     await userEvent.type(campo, 'Adorei');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
@@ -86,13 +86,15 @@ describe('ReviewDetail', () => {
     });
   });
 
-  it('exclui a resenha e volta para o filme', async () => {
+  it('exclui o comentário e volta para o filme', async () => {
     excluirResenha.mockResolvedValue(null);
     renderizar();
     await screen.findByText('Gostei muito');
 
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(screen.getAllByRole('button', { name: 'Excluir' })[1]);
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Excluir' })[1],
+    );
 
     expect(await screen.findByText('página do filme')).toBeInTheDocument();
     expect(excluirResenha).toHaveBeenCalledWith(5);

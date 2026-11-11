@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { ListVideo } from 'lucide-react';
 import { EmptyState } from './EmptyState';
 
 describe('EmptyState', () => {
@@ -24,5 +25,11 @@ describe('EmptyState', () => {
     expect(
       screen.getByRole('button', { name: 'Explorar' }),
     ).toBeInTheDocument();
+  });
+
+  it('desenha o ícone quando fornecido', () => {
+    const { container } = render(<EmptyState title="Vazio" icon={ListVideo} />);
+
+    expect(container.querySelector('[data-slot="icon"]')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { ApiError } from './errors';
-import { clearTokens, setTokens } from './tokens';
+import { clearAccessToken, setAccessToken } from './tokens';
 
 const CONTAS = [
   {
@@ -32,11 +32,16 @@ function paraSessao(conta) {
   };
 }
 
-function tokensFalsos(conta) {
-  setTokens({
-    access: `mock-access-${conta.username}`,
-    refresh: 'mock-refresh',
-  });
+// SIMULAÇÃO do cookie HttpOnly de refresh: só existe no modo mock e guarda
+// apenas o username (nenhum segredo real) em sessionStorage, para o app
+// "restaurar" a sessão ao recarregar. A API real usa cookie HttpOnly de verdade.
+const CHAVE_MOCK = 'twist:mock-refresh';
+
+function abrirSessaoFalsa(conta) {
+  setAccessToken(`mock-access-${conta.username}`);
+  try {
+    sessionStorage.setItem(CHAVE_MOCK, conta.username);
+  } catch {}
 }
 
 export async function login({ identifier, password }) {
@@ -50,7 +55,7 @@ export async function login({ identifier, password }) {
     throw new ApiError(401, 'E-mail, usuário ou senha incorretos.');
   }
 
-  tokensFalsos(conta);
+  abrirSessaoFalsa(conta);
   return paraSessao(conta);
 }
 
@@ -80,10 +85,39 @@ export async function register(dados) {
   };
   CONTAS.push(conta);
 
-  tokensFalsos(conta);
+  abrirSessaoFalsa(conta);
+  return paraSessao(conta);
+}
+
+export async function restore() {
+  let username = null;
+  try {
+    username = sessionStorage.getItem(CHAVE_MOCK);
+  } catch {}
+  const conta = CONTAS.find((c) => c.username === username);
+  if (!conta) return null;
+  setAccessToken(`mock-access-${conta.username}`);
   return paraSessao(conta);
 }
 
 export async function logout() {
-  clearTokens();
+  clearAccessToken();
+  try {
+    sessionStorage.removeItem(CHAVE_MOCK);
+  } catch {}
+}
+
+export async function solicitarRecuperacaoSenha() {
+  await esperar(LATENCIA_MS);
+}
+
+// No modo simulado só o token 'valido' funciona; ele redefine a senha de davi.
+export async function redefinirSenha({ uid, token, password }) {
+  await esperar(LATENCIA_MS);
+
+  if (token !== 'valido') {
+    throw new ApiError(400, 'Link inválido ou expirado.');
+  }
+  const conta = CONTAS.find((c) => c.username === uid) ?? CONTAS[0];
+  conta.password = password;
 }

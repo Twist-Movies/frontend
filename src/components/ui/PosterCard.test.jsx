@@ -34,9 +34,9 @@ describe('PosterCard', () => {
       <PosterCard id="1" title="Bacurau" />,
     );
 
-    expect(container.querySelector('[data-slot="placeholder"]')).toHaveTextContent(
-      'Bacurau',
-    );
+    expect(
+      container.querySelector('[data-slot="placeholder"]'),
+    ).toHaveTextContent('Bacurau');
     expect(container.querySelector('img')).toBeNull();
   });
 

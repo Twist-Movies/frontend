@@ -1,6 +1,6 @@
 const NUMEROS = [
   { valor: '572 mil', rotulo: 'títulos registrados' },
-  { valor: '48 mil', rotulo: 'resenhas escritas' },
+  { valor: '48 mil', rotulo: 'comentários escritos' },
   { valor: '12 mil', rotulo: 'listas publicadas' },
 ];
 

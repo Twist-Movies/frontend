@@ -16,7 +16,12 @@ vi.mock('../../api/movies', () => ({
   removerReacao: vi.fn(),
 }));
 
-const ESTADO = { watched: false, in_watchlist: false, reaction: null, rating: null };
+const ESTADO = {
+  watched: false,
+  in_watchlist: false,
+  reaction: null,
+  rating: null,
+};
 
 function renderizar(estado = {}) {
   const onChanged = vi.fn();
@@ -88,12 +93,16 @@ describe('FilmActions', () => {
   });
 
   it('mostra o erro da API e não recarrega', async () => {
-    api.marcarAssistido.mockRejectedValue(new ApiError(400, 'Algo deu errado.'));
+    api.marcarAssistido.mockRejectedValue(
+      new ApiError(400, 'Algo deu errado.'),
+    );
     const { onChanged } = renderizar();
 
     await userEvent.click(screen.getByRole('button', { name: 'Assistido' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Algo deu errado.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Algo deu errado.',
+    );
     expect(onChanged).not.toHaveBeenCalled();
   });
 
@@ -105,5 +114,56 @@ describe('FilmActions', () => {
     );
 
     expect(onAddToList).toHaveBeenCalledOnce();
+  });
+
+  it('envia meia estrela', async () => {
+    const { onChanged } = renderizar();
+
+    await userEvent.click(screen.getByRole('radio', { name: '3,5 estrelas' }));
+
+    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+    expect(api.avaliarFilme).toHaveBeenCalledWith(603, 3.5);
+  });
+
+  it('usa title e aria-pressed nos botões de ícone', () => {
+    renderizar({ reaction: 'LIKE' });
+
+    const gostei = screen.getByRole('button', { name: 'Gostei' });
+    expect(gostei).toHaveAttribute('title', 'Gostei');
+    expect(gostei).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Não gostei' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Adicionar a uma lista' }),
+    ).not.toHaveAttribute('aria-pressed');
+  });
+
+  it('rola até a seção de comentários pela chamada para comentar', async () => {
+    const alvo = document.createElement('div');
+    alvo.id = 'comentarios';
+    alvo.scrollIntoView = vi.fn();
+    document.body.append(alvo);
+    renderizar();
+
+    await userEvent.click(
+      screen.getByRole('link', { name: /Escrever um comentário/ }),
+    );
+
+    expect(alvo.scrollIntoView).toHaveBeenCalled();
+    alvo.remove();
+  });
+
+  it('não impede a âncora quando a seção não existe', async () => {
+    renderizar();
+
+    await userEvent.click(
+      screen.getByRole('link', { name: /Escrever um comentário/ }),
+    );
+
+    expect(
+      screen.getByRole('link', { name: /Escrever um comentário/ }),
+    ).toHaveAttribute('href', '#comentarios');
   });
 });

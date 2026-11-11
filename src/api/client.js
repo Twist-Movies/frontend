@@ -1,5 +1,5 @@
 import { erroDaResposta, erroDeRede, ApiError } from './errors';
-import { clearTokens, getTokens, setTokens } from './tokens';
+import { clearAccessToken, getAccessToken, setAccessToken } from './tokens';
 
 function baseUrl() {
   return import.meta.env.VITE_API_URL || '/api';
@@ -20,8 +20,11 @@ async function lerCorpo(resposta) {
   return texto || null;
 }
 
-async function enviar(caminho, { method, body, token }) {
-  const headers = { Accept: 'application/json' };
+// Cabeçalho exigido pelo backend em refresh/logout (defesa extra contra CSRF).
+export const CABECALHO_CLIENTE = { 'X-Twist-Client': 'web' };
+
+async function enviar(caminho, { method, body, token, headers: extras }) {
+  const headers = { Accept: 'application/json', ...extras };
   let corpo = body;
 
   if (body !== undefined && !(body instanceof FormData)) {
@@ -35,6 +38,8 @@ async function enviar(caminho, { method, body, token }) {
       method,
       headers,
       body: corpo,
+      // Envia/recebe o cookie HttpOnly do refresh (mesmo domínio ou CORS credenciado).
+      credentials: 'include',
     });
   } catch {
     throw erroDeRede();
@@ -45,21 +50,20 @@ async function enviar(caminho, { method, body, token }) {
 let refreshEmAndamento = null;
 
 async function renovarAccess() {
-  const tokens = getTokens();
-  if (!tokens) return false;
-
+  // Sem corpo: o navegador envia o cookie HttpOnly sozinho.
   const resposta = await enviar('/accounts/token/refresh/', {
     method: 'POST',
-    body: { refresh: tokens.refresh },
+    headers: CABECALHO_CLIENTE,
   });
   if (!resposta.ok) return false;
 
   const dados = await lerCorpo(resposta);
-  setTokens({ access: dados.access, refresh: dados.refresh ?? tokens.refresh });
+  if (!dados?.access) return false;
+  setAccessToken(dados.access);
   return true;
 }
 
-function renovarUmaVez() {
+export function renovarUmaVez() {
   refreshEmAndamento ??= renovarAccess().finally(() => {
     refreshEmAndamento = null;
   });
@@ -68,25 +72,27 @@ function renovarUmaVez() {
 
 export async function request(
   caminho,
-  { method = 'GET', body, auth = true } = {},
+  { method = 'GET', body, auth = true, headers } = {},
 ) {
   let resposta = await enviar(caminho, {
     method,
     body,
-    token: auth ? getTokens()?.access : undefined,
+    headers,
+    token: auth ? getAccessToken() : undefined,
   });
 
-  if (resposta.status === 401 && auth && getTokens()) {
+  if (resposta.status === 401 && auth && getAccessToken()) {
     const renovou = await renovarUmaVez().catch(() => false);
     if (!renovou) {
-      clearTokens();
+      clearAccessToken();
       ouvintesDeExpiracao.forEach((callback) => callback());
       throw new ApiError(401, 'Sua sessão expirou. Entre novamente.');
     }
     resposta = await enviar(caminho, {
       method,
       body,
-      token: getTokens().access,
+      headers,
+      token: getAccessToken(),
     });
   }
 

@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   errosDaApiNoFormulario,
   validarCadastro,
+  validarEmail,
   validarLogin,
+  validarRecuperacao,
+  validarRedefinicao,
+  validarSenha,
 } from './validacao';
 
 describe('validarLogin', () => {
@@ -23,7 +27,7 @@ const VALIDO = {
   lastName: 'Almeida',
   username: 'davi.almeida',
   email: 'davi@twist.app',
-  birthDate: '1999-05-10',
+  birthDate: '10/05/1999',
   password: 'senhaforte1',
   avatar: null,
 };
@@ -76,8 +80,17 @@ describe('validarCadastro', () => {
 
   it('recusa data de nascimento no futuro', () => {
     expect(
-      validarCadastro({ ...VALIDO, birthDate: '2999-01-01' }).birthDate,
+      validarCadastro({ ...VALIDO, birthDate: '01/01/2999' }).birthDate,
     ).toBe('A data de nascimento não pode ser no futuro.');
+  });
+
+  it('recusa data de nascimento incompleta ou inexistente', () => {
+    expect(
+      validarCadastro({ ...VALIDO, birthDate: '10/05' }).birthDate,
+    ).toMatch(/dd\/mm\/aaaa/);
+    expect(
+      validarCadastro({ ...VALIDO, birthDate: '31/02/2000' }).birthDate,
+    ).toMatch(/válida/);
   });
 
   it('espelha as regras de senha do Django', () => {
@@ -115,5 +128,45 @@ describe('errosDaApiNoFormulario', () => {
         email: 'd',
       }),
     ).toEqual({ birthDate: 'a', firstName: 'b', lastName: 'c', email: 'd' });
+  });
+});
+
+describe('validarEmail / validarSenha', () => {
+  it('validam e-mail', () => {
+    expect(validarEmail(' ')).toBe('Informe seu e-mail.');
+    expect(validarEmail('x')).toBe('E-mail inválido.');
+    expect(validarEmail('a@b.co')).toBeNull();
+  });
+
+  it('validam senha', () => {
+    expect(validarSenha('')).toBe('Informe a nova senha.');
+    expect(validarSenha('', 'Escolha.')).toBe('Escolha.');
+    expect(validarSenha('abc')).toMatch(/8 caracteres/);
+    expect(validarSenha('12345678')).toMatch(/apenas números/);
+    expect(validarSenha('senha1234')).toBeNull();
+  });
+});
+
+describe('validarRecuperacao', () => {
+  it('cobra e-mail válido', () => {
+    expect(validarRecuperacao({ email: '' })).toEqual({
+      email: 'Informe seu e-mail.',
+    });
+    expect(validarRecuperacao({ email: 'a@b.co' })).toEqual({});
+  });
+});
+
+describe('validarRedefinicao', () => {
+  it('cobra senha e confirmação iguais', () => {
+    expect(validarRedefinicao({ password: '', confirmacao: '' })).toEqual({
+      password: 'Informe a nova senha.',
+      confirmacao: 'Repita a nova senha.',
+    });
+    expect(
+      validarRedefinicao({ password: 'senha1234', confirmacao: 'outra1234' }),
+    ).toEqual({ confirmacao: 'As senhas não coincidem.' });
+    expect(
+      validarRedefinicao({ password: 'senha1234', confirmacao: 'senha1234' }),
+    ).toEqual({});
   });
 });

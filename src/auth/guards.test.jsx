@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
@@ -39,6 +39,37 @@ function montar(rota, session) {
     </MemoryRouter>,
   );
 }
+
+describe('estado de carregamento (restaurando a sessão)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    // Promessa pendente: a restauração nunca termina durante o teste.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => {})),
+    );
+    vi.stubEnv('VITE_API_MOCK', 'false');
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('RequireAuth não redireciona nem mostra conteúdo enquanto restaura', () => {
+    montar('/', undefined);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Carregando');
+    expect(screen.queryByText('feed')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rota')).not.toBeInTheDocument();
+  });
+
+  it('RedirectIfAuthenticated também espera', () => {
+    montar('/boas-vindas', undefined);
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByText('landing')).not.toBeInTheDocument();
+  });
+});
 
 describe('RequireAuth', () => {
   beforeEach(() => localStorage.clear());

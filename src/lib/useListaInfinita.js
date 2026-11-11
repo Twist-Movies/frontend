@@ -34,7 +34,8 @@ export function useListaInfinita(carregarPagina, deps) {
       const dados = await carregarRef.current(pagina);
       if (minha !== geracao.current) return;
       setEstado((atual) => ({
-        itens: pagina === 1 ? dados.results : [...atual.itens, ...dados.results],
+        itens:
+          pagina === 1 ? dados.results : [...atual.itens, ...dados.results],
         pagina,
         totalPaginas: dados.total_pages ?? 1,
         loading: false,

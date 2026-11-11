@@ -22,19 +22,36 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument();
   });
 
-  it.each([
-    ['/u/davi/filmes', 'Filmes assistidos'],
-    ['/u/davi/diario', 'Diário'],
-    ['/u/davi/watchlist', 'Watchlist'],
-  ])('resolve a rota com parâmetro %s para a tela %s', (route, heading) => {
-    renderAt(route);
+  it.each([['/u/davi/filmes', 'Filmes assistidos']])(
+    'resolve a rota com parâmetro %s para a tela %s',
+    (route, heading) => {
+      renderAt(route);
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: heading }),
-    ).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: heading }),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it.each(['/u/davi/diario', '/u/davi/watchlist'])(
+    'não tem a rota %s (sem endpoint no back), cai no 404',
+    (route) => {
+      renderAt(route);
+
+      expect(screen.getByText('Esta página não existe')).toBeInTheDocument();
+    },
+  );
+
+  it('redireciona /resenha/:id antigo para /comentario/:id', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('off')));
+    renderAt('/resenha/7');
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByText('Esta página não existe')).toBeNull();
+    vi.unstubAllGlobals();
   });
 
-  it.each(['/filme/3', '/lista/1', '/resenha/1', '/u/davi'])(
+  it.each(['/filme/3', '/lista/1', '/comentario/1', '/u/davi'])(
     'resolve a rota dinâmica %s para uma tela que consulta a API',
     async (route) => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('off')));
@@ -45,6 +62,27 @@ describe('AppRoutes', () => {
       vi.unstubAllGlobals();
     },
   );
+
+  it('resolve /esqueci-senha para a tela de recuperação', () => {
+    renderWithAuth(<AppRoutes />, { route: '/esqueci-senha', session: null });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Esqueci minha senha' }),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ['logado', undefined],
+    ['deslogado', null],
+  ])('resolve /redefinir-senha/:uid/:token para usuário %s', (_, session) => {
+    const opcoes = { route: '/redefinir-senha/u1/tok' };
+    if (session !== undefined) opcoes.session = session;
+    renderWithAuth(<AppRoutes />, opcoes);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Nova senha' }),
+    ).toBeInTheDocument();
+  });
 
   it('mostra o feed na raiz', () => {
     renderAt('/');

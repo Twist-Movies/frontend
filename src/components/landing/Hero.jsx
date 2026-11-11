@@ -13,10 +13,8 @@ function Hero() {
           </p>
 
           <h1 className="mb-6 text-[55px] leading-[0.95] font-black sm:text-[clamp(50px,7vw,100px)]">
-            Descubra.{' '}
-            <br />
-            Avalie.{' '}
-            <br />
+            Descubra. <br />
+            Avalie. <br />
             Compartilhe.
           </h1>
 

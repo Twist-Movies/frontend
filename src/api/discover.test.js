@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { instalarFetch, json, ultimaChamada } from '../test/fetch';
-import { descobrirFilmes } from './discover';
+import { descobrirFilmes, filmesEmAlta } from './discover';
 
 let fetchMock;
 
 beforeEach(() => {
   localStorage.clear();
   fetchMock = instalarFetch();
-  fetchMock.mockResolvedValue(json(200, { results: [] }));
+  fetchMock.mockImplementation(async () => json(200, { results: [] }));
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -44,6 +44,16 @@ describe('descobrirFilmes', () => {
   it('é uma rota pública: não envia o token', async () => {
     await descobrirFilmes();
 
-    expect(ultimaChamada(fetchMock).opcoes.headers.Authorization).toBeUndefined();
+    expect(
+      ultimaChamada(fetchMock).opcoes.headers.Authorization,
+    ).toBeUndefined();
+  });
+});
+
+describe('filmesEmAlta', () => {
+  it('consulta a rota pública de em alta', async () => {
+    await filmesEmAlta(2);
+
+    expect(ultimaChamada(fetchMock).url).toBe('/api/movies/trending/?page=2');
   });
 });

@@ -6,7 +6,13 @@ import { avaliarFilme, buscarFilmes, marcarAssistido } from '../../api/movies';
 import { criarResenha } from '../../api/reviews';
 import { anoDe } from '../../lib/tmdbImage';
 
-const VAZIO = { termo: '', resultados: null, escolhido: null, nota: 0, texto: '' };
+const VAZIO = {
+  termo: '',
+  resultados: null,
+  escolhido: null,
+  nota: 0,
+  texto: '',
+};
 
 export function LogFilmModal({ open, onClose }) {
   const [estado, setEstado] = useState(VAZIO);
@@ -124,8 +130,8 @@ export function LogFilmModal({ open, onClose }) {
               label="Sua nota"
             />
             <Textarea
-              aria-label="Resenha (opcional)"
-              placeholder="Resenha (opcional)"
+              aria-label="Comentário (opcional)"
+              placeholder="Comentário (opcional)"
               maxLength={5000}
               value={estado.texto}
               onChange={(e) => alterar({ texto: e.target.value })}
