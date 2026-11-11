@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { login, logout, register } from './auth';
+import {
+  login,
+  logout,
+  redefinirSenha,
+  register,
+  solicitarRecuperacaoSenha,
+} from './auth';
 import { getTokens, setTokens } from './tokens';
 
 function json(status, corpo) {
@@ -155,5 +161,45 @@ describe('logout (API real)', () => {
   it('não chama a API quando não há tokens', async () => {
     await logout();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('recuperação de senha (API real)', () => {
+  it('solicita o link sem autenticação', async () => {
+    setTokens({ access: 'acc', refresh: 'ref' });
+    fetchMock.mockResolvedValue(json(200, { detail: 'ok' }));
+
+    await solicitarRecuperacaoSenha(' a@b.co ');
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/accounts/password-reset/');
+    expect(opcoes.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(opcoes.body)).toEqual({ email: 'a@b.co' });
+  });
+
+  it('redefine enviando uid, token e new_password', async () => {
+    fetchMock.mockResolvedValue(json(200, { detail: 'ok' }));
+
+    await redefinirSenha({ uid: 'u', token: 't', password: 'senhaforte1' });
+
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/accounts/password-reset/confirm/');
+    expect(JSON.parse(opcoes.body)).toEqual({
+      uid: 'u',
+      token: 't',
+      new_password: 'senhaforte1',
+    });
+  });
+
+  it('propaga o erro de link inválido', async () => {
+    fetchMock.mockResolvedValue(
+      json(400, { detail: 'Link inválido ou expirado.' }),
+    );
+    await expect(
+      redefinirSenha({ uid: 'u', token: 't', password: 'x' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Link inválido ou expirado.',
+    });
   });
 });

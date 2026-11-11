@@ -76,3 +76,23 @@ describe('erroDeRede', () => {
     expect(erro.message).toMatch(/conexão/i);
   });
 });
+
+describe('recuperação de senha', () => {
+  it('traduz token inválido ou expirado', () => {
+    expect(traduzir('Invalid or expired token.')).toBe(
+      'Link inválido ou expirado.',
+    );
+  });
+
+  it('traduz o throttle (429) com ou sem detail', () => {
+    const msg = 'Muitas tentativas. Aguarde um pouco e tente novamente.';
+    expect(
+      erroDaResposta(429, {
+        detail: 'Request was throttled. Expected available in 60 seconds.',
+      }).message,
+    ).toBe(msg);
+    const vazio = erroDaResposta(429, null);
+    expect(vazio.status).toBe(429);
+    expect(vazio.message).toBe(msg);
+  });
+});

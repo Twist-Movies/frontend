@@ -46,6 +46,27 @@ describe('AppRoutes', () => {
     },
   );
 
+  it('resolve /esqueci-senha para a tela de recuperação', () => {
+    renderWithAuth(<AppRoutes />, { route: '/esqueci-senha', session: null });
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Esqueci minha senha' }),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ['logado', undefined],
+    ['deslogado', null],
+  ])('resolve /redefinir-senha/:uid/:token para usuário %s', (_, session) => {
+    const opcoes = { route: '/redefinir-senha/u1/tok' };
+    if (session !== undefined) opcoes.session = session;
+    renderWithAuth(<AppRoutes />, opcoes);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Nova senha' }),
+    ).toBeInTheDocument();
+  });
+
   it('mostra o feed na raiz', () => {
     renderAt('/');
 

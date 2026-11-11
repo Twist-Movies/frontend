@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { login, logout, register } from './auth.mock';
+import {
+  login,
+  logout,
+  redefinirSenha,
+  register,
+  solicitarRecuperacaoSenha,
+} from './auth.mock';
 import { getTokens } from './tokens';
 
 beforeEach(() => localStorage.clear());
@@ -61,5 +67,37 @@ describe('logout (simulado)', () => {
     await login({ identifier: 'davi', password: 'twist1234' });
     await logout();
     expect(getTokens()).toBeNull();
+  });
+});
+
+describe('recuperação de senha (simulada)', () => {
+  it('a solicitação é sempre bem-sucedida', async () => {
+    await expect(
+      solicitarRecuperacaoSenha('qualquer@x.com'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('redefine a senha com o token válido', async () => {
+    await redefinirSenha({
+      uid: 'marina',
+      token: 'valido',
+      password: 'nova12345',
+    });
+
+    await expect(
+      login({ identifier: 'marina', password: 'nova12345' }),
+    ).resolves.toMatchObject({ username: 'marina' });
+    await expect(
+      login({ identifier: 'marina', password: 'twist1234' }),
+    ).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('rejeita outros tokens com 400', async () => {
+    await expect(
+      redefinirSenha({ uid: 'davi', token: 'velho', password: 'nova12345' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Link inválido ou expirado.',
+    });
   });
 });

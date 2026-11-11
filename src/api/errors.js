@@ -32,6 +32,14 @@ const TRADUCOES = [
   [/password is too similar/i, 'A senha está parecida demais com seus dados.'],
   [/enter a valid email/i, 'E-mail inválido.'],
   [/this field is required|this field may not be blank/i, 'Campo obrigatório.'],
+  [
+    /invalid or expired|token.*(invalid|expired)|link inv[aá]lido/i,
+    'Link inválido ou expirado.',
+  ],
+  [
+    /request was throttled|too many requests|throttled/i,
+    'Muitas tentativas. Aguarde um pouco e tente novamente.',
+  ],
   [/invalid credentials/i, 'E-mail, usuário ou senha incorretos.'],
 ];
 
@@ -45,6 +53,10 @@ function primeira(valor) {
 }
 
 export function erroDaResposta(status, dados) {
+  if (status === 429) {
+    const msg = typeof dados?.detail === 'string' ? dados.detail : '';
+    return new ApiError(status, traduzir(msg || 'Request was throttled.'));
+  }
   if (status >= 500 || !dados || typeof dados !== 'object') {
     return new ApiError(status, GENERICA);
   }

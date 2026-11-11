@@ -11,6 +11,34 @@ export function validarLogin({ identifier, password }) {
   return erros;
 }
 
+export function validarEmail(email) {
+  if (!email.trim()) return 'Informe seu e-mail.';
+  if (!EMAIL.test(email.trim())) return 'E-mail inválido.';
+  return null;
+}
+
+export function validarSenha(senha, vazia = 'Informe a nova senha.') {
+  if (!senha) return vazia;
+  if (senha.length < 8) return 'A senha precisa ter pelo menos 8 caracteres.';
+  if (/^\d+$/.test(senha)) return 'A senha não pode ter apenas números.';
+  return null;
+}
+
+export function validarRecuperacao({ email }) {
+  const erro = validarEmail(email);
+  return erro ? { email: erro } : {};
+}
+
+export function validarRedefinicao({ password, confirmacao }) {
+  const erros = {};
+  const erroSenha = validarSenha(password);
+  if (erroSenha) erros.password = erroSenha;
+  if (!confirmacao) erros.confirmacao = 'Repita a nova senha.';
+  else if (confirmacao !== password)
+    erros.confirmacao = 'As senhas não coincidem.';
+  return erros;
+}
+
 function hoje() {
   const agora = new Date();
   const local = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000);
@@ -29,18 +57,15 @@ export function validarCadastro(dados) {
   else if (!USERNAME.test(usuario))
     erros.username = 'Use letras, números e @ . + - _ (sem espaços).';
 
-  if (!dados.email.trim()) erros.email = 'Informe seu e-mail.';
-  else if (!EMAIL.test(dados.email.trim())) erros.email = 'E-mail inválido.';
+  const erroEmail = validarEmail(dados.email);
+  if (erroEmail) erros.email = erroEmail;
 
   if (!dados.birthDate) erros.birthDate = 'Informe sua data de nascimento.';
   else if (dados.birthDate > hoje())
     erros.birthDate = 'A data de nascimento não pode ser no futuro.';
 
-  if (!dados.password) erros.password = 'Escolha uma senha.';
-  else if (dados.password.length < 8)
-    erros.password = 'A senha precisa ter pelo menos 8 caracteres.';
-  else if (/^\d+$/.test(dados.password))
-    erros.password = 'A senha não pode ter apenas números.';
+  const erroSenha = validarSenha(dados.password, 'Escolha uma senha.');
+  if (erroSenha) erros.password = erroSenha;
 
   if (dados.avatar) {
     if (!AVATAR_TIPOS.includes(dados.avatar.type))

@@ -87,3 +87,18 @@ export async function register(dados) {
 export async function logout() {
   clearTokens();
 }
+
+export async function solicitarRecuperacaoSenha() {
+  await esperar(LATENCIA_MS);
+}
+
+// No modo simulado só o token 'valido' funciona; ele redefine a senha de davi.
+export async function redefinirSenha({ uid, token, password }) {
+  await esperar(LATENCIA_MS);
+
+  if (token !== 'valido') {
+    throw new ApiError(400, 'Link inválido ou expirado.');
+  }
+  const conta = CONTAS.find((c) => c.username === uid) ?? CONTAS[0];
+  conta.password = password;
+}

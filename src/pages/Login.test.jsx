@@ -128,3 +128,17 @@ describe('Login', () => {
     });
   });
 });
+
+describe('Login: recuperação de senha', () => {
+  it('oferece o link para /esqueci-senha', () => {
+    montar();
+    expect(
+      screen.getByRole('link', { name: 'Esqueci minha senha' }),
+    ).toHaveAttribute('href', '/esqueci-senha');
+  });
+
+  it('mostra o aviso vindo da redefinição de senha', () => {
+    montar({ pathname: '/entrar', state: { aviso: 'Senha redefinida.' } });
+    expect(screen.getByRole('status')).toHaveTextContent('Senha redefinida.');
+  });
+});

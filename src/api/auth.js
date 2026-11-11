@@ -55,3 +55,19 @@ export async function logout() {
     clearTokens();
   }
 }
+
+export async function solicitarRecuperacaoSenha(email) {
+  await request('/accounts/password-reset/', {
+    method: 'POST',
+    body: { email: email.trim() },
+    auth: false,
+  });
+}
+
+export async function redefinirSenha({ uid, token, password }) {
+  await request('/accounts/password-reset/confirm/', {
+    method: 'POST',
+    body: { uid, token, new_password: password },
+    auth: false,
+  });
+}

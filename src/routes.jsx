@@ -6,6 +6,8 @@ import Feed from './pages/Feed';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Films from './pages/Films';
 import FilmDetail from './pages/FilmDetail';
 import Series from './pages/Series';
@@ -30,7 +32,12 @@ export function AppRoutes() {
           <Route path="boas-vindas" element={<Landing />} />
           <Route path="entrar" element={<Login />} />
           <Route path="cadastro" element={<Signup />} />
+          <Route path="esqueci-senha" element={<ForgotPassword />} />
         </Route>
+      </Route>
+
+      <Route element={<PublicShell />}>
+        <Route path="redefinir-senha/:uid/:token" element={<ResetPassword />} />
       </Route>
 
       <Route element={<RequireAuth />}>
